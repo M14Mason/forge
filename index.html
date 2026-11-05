@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0b0f14">
+<title>Forge: Python for Finance</title>
+<style>
+:root{--bg:#0b0f14;--panel:#121821;--panel2:#18202b;--line:#253041;--text:#e6edf3;--muted:#8b98a8;--accent:#3fb950;--accent2:#58a6ff;--warn:#d29922;--bad:#f85149;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+header{position:sticky;top:0;z-index:5;background:rgba(11,15,20,.95);border-bottom:1px solid var(--line);backdrop-filter:blur(6px)}
+.bar{max-width:1000px;margin:auto;display:flex;align-items:center;gap:6px;padding:10px 14px;overflow-x:auto}
+.logo{font-weight:800;letter-spacing:.5px;margin-right:8px;color:var(--accent)}
+nav button{background:none;border:0;color:var(--muted);padding:6px 10px;border-radius:8px;font:inherit;cursor:pointer;white-space:nowrap}
+nav button.on{color:var(--text);background:var(--panel2)}
+main{max-width:1000px;margin:auto;padding:16px 14px 120px}
+h2{margin:6px 0 2px;font-size:22px}h3{margin:0 0 8px;font-size:16px}
+.muted{color:var(--muted)}.small{font-size:13px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+.btn{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font:inherit;cursor:pointer;margin:3px 4px 3px 0}
+.btn:hover{border-color:var(--accent2)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#04120a;font-weight:600}
+.btn.blue{background:var(--accent2);border-color:var(--accent2);color:#03101f;font-weight:600}
+.btn:disabled{opacity:.5;cursor:default}
+code{font-family:var(--mono);background:var(--panel2);padding:1px 5px;border-radius:4px;font-size:13px}
+pre.code{font-family:var(--mono);background:#0d1117;border:1px solid var(--line);border-radius:8px;padding:10px;overflow-x:auto;font-size:13px;margin:8px 0;white-space:pre}
+textarea,input,select{font:inherit;color:var(--text);background:#0d1117;border:1px solid var(--line);border-radius:8px;padding:8px;width:100%}
+textarea.ed{font-family:var(--mono);font-size:14px;line-height:1.5;tab-size:4;white-space:pre;overflow:auto;resize:vertical;min-height:120px}
+.out{font-family:var(--mono);font-size:13px;white-space:pre-wrap;background:#06090d;border:1px solid var(--line);border-radius:8px;padding:10px;margin-top:8px;display:none;max-height:340px;overflow:auto}
+.out .err{color:var(--bad)}.pass{color:var(--accent)}.fail{color:var(--bad)}
+.choice{display:block;width:100%;text-align:left}
+.choice.right{border-color:var(--accent);color:var(--accent)}.choice.wrong{border-color:var(--bad);color:var(--bad)}
+.pill{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:var(--panel2);border:1px solid var(--line);color:var(--muted);margin-right:4px}
+.pill.ok{color:var(--accent);border-color:#23552f}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.metric{display:flex;justify-content:space-between;font-size:13px;padding:2px 0}
+.dots{color:var(--accent);letter-spacing:2px}.dots i{color:#2c3746;font-style:normal}
+.lesson{cursor:pointer}.lesson:hover{border-color:var(--accent2)}
+.warn{border-left:3px solid var(--warn);padding:8px 10px;background:#1e1a10;border-radius:6px;margin:8px 0;font-size:14px}
+.crumb{font-size:13px;color:var(--muted)}.crumb a{color:var(--accent2);cursor:pointer}
+.prog{height:6px;background:var(--panel2);border-radius:9px;overflow:hidden}.prog b{display:block;height:100%;background:var(--accent)}
+#fab{position:fixed;right:16px;bottom:16px;z-index:9;border-radius:99px;padding:12px 18px;box-shadow:0 6px 20px #0008}
+#drawer{position:fixed;top:0;right:0;height:100%;width:min(440px,100%);background:var(--panel);border-left:1px solid var(--line);z-index:10;display:none;flex-direction:column}
+#drawer.open{display:flex}
+#msgs{flex:1;overflow:auto;padding:12px}
+.msg{padding:9px 11px;border-radius:10px;margin:6px 0;font-size:14px}
+.msg.u{background:#1c2a3d;margin-left:30px}.msg.a{background:var(--panel2);margin-right:20px}
+#toast{position:fixed;left:50%;bottom:80px;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--line);padding:10px 16px;border-radius:10px;z-index:20;display:none;max-width:90%}
+.flash{font-size:18px;padding:18px;text-align:center}
+@media(max-width:600px){main{padding:12px 10px 120px}textarea.ed{font-size:13px}}
+</style>
+</head>
+<body>
+<header><div class="bar"><span class="logo">FORGE</span><nav id="nav"></nav></div></header>
+<main id="main"></main>
+<button id="fab" class="btn blue" onclick="toggleTutor()">Tutor</button>
+<aside id="drawer">
+  <div class="row" style="padding:10px 12px;border-bottom:1px solid var(--line);justify-content:space-between">
+    <b>AI Tutor</b><span class="small muted" id="tmodel"></span><button class="btn" onclick="toggleTutor()">Close</button>
+  </div>
+  <div id="msgs"></div>
+  <div style="padding:10px;border-top:1px solid var(--line)">
+    <div class="row small muted" style="margin-bottom:6px">
+      <label><input type="checkbox" id="tctx" checked style="width:auto"> Send my current code/lesson</label>
+      <label><input type="checkbox" id="tweb" style="width:auto"> Research (web search)</label>
+    </div>
+    <textarea id="tin" rows="3" placeholder="Ask about an error, a concept, or a finance topic..."></textarea>
+    <div class="row"><button class="btn pri" onclick="sendTutor()">Send</button><button class="btn" onclick="clearChat()">New chat</button></div>
+  </div>
+</aside>
+<div id="toast"></div>
+<script id="data" type="application/json">{"harness": "\nimport sys, io, json, traceback, random as _r\n_orig = {k: getattr(_r, k) for k in ('gauss', 'random', 'uniform', 'choice')}\n\ndef _reset():\n    for k, v in _orig.items():\n        setattr(_r, k, v)\n\ndef fixed_gauss(v):\n    _r.gauss = lambda mu=0, sigma=1: v\n    return True\n\ndef _clean_tb(code):\n    et, ev, tb = sys.exc_info()\n    frames = [f for f in traceback.extract_tb(tb) if f.filename == '<your code>']\n    lines = code.splitlines()\n    s = ''.join('  Line %d%s:\\n    %s\\n' % (f.lineno, '' if f.name == '<module>' else ', in ' + f.name,\n                lines[f.lineno - 1].strip() if f.lineno and 0 < f.lineno <= len(lines) else '') for f in frames)\n    return 'Traceback (your code):\\n' + s + ''.join(traceback.format_exception_only(et, ev))\n\ndef run_code(code, inputs):\n    _reset()\n    ns = {'__name__': '__main__'}\n    q = list(inputs)\n    def _inp(prompt=''):\n        sys.stdout.write(str(prompt))\n        if not q:\n            raise EOFError('Your program called input() but there are no more input lines. Add them in the Input box.')\n        v = q.pop(0)\n        sys.stdout.write(v + '\\n')\n        return v\n    ns['input'] = _inp\n    buf = io.StringIO()\n    old = sys.stdout\n    sys.stdout = buf\n    err = None\n    try:\n        exec(compile(code, '<your code>', 'exec'), ns)\n    except BaseException:\n        err = _clean_tb(code)\n    finally:\n        sys.stdout = old\n    return ns, buf.getvalue()[:20000], err\n\ndef run_tests(code, inputs, tests):\n    ns, out, err = run_code(code, inputs)\n    if err:\n        return out, err, [{'d': 'Code runs without errors', 'p': False, 'm': err.strip().splitlines()[-1]}]\n    res = []\n    for t in tests:\n        env = dict(ns)\n        env.update({'ns': ns, 'out': out, 'code': code, 'fixed_gauss': fixed_gauss,\n                    'rerun': (lambda inp: run_code(code, inp)[1] + (run_code(code, inp)[2] or ''))})\n        try:\n            ok = bool(eval(t['t'], env))\n            res.append({'d': t['d'], 'p': ok, 'm': '' if ok else t.get('h', '')})\n        except Exception as e:\n            res.append({'d': t['d'], 'p': False, 'm': type(e).__name__ + ': ' + str(e)})\n        finally:\n            _reset()\n    return out, err, res\n\ndef _entry(j):\n    m = json.loads(j)\n    code = m['code']\n    inputs = m.get('inputs') or []\n    tests = m.get('tests') or []\n    if tests:\n        out, err, res = run_tests(code, inputs, tests)\n    else:\n        _, out, err = run_code(code, inputs)\n        res = []\n    return json.dumps({'out': out, 'err': err, 'results': res})\n", "tutor_system": "You are the built-in Python tutor in Forge, an app where a high school beginner learns Python (following Python for Everybody / PY4E) to build finance and wealth-management projects BY HIMSELF.\n\nHard rules:\n- Never write the full solution to an exercise or project step, even if asked. If he begs, give only the next smallest step or one line with a blank to fill.\n- Teach Socratically: find the exact line or idea that is wrong, name it plainly, then ask one guiding question or show a tiny example on a DIFFERENT problem.\n- Be direct. If his idea or code is wrong, say so and why. No fluff, no em dashes.\n- Keep replies under 120 words unless he asks for a deeper explanation. Bold technical terms the first time you use them.\n- Explain error messages in plain English: what Python is complaining about and where.\n- For finance or research questions, explain accurately and simply, say when something is a simplification, and flag real-world risks (losses, regulations) plainly.\n- End most replies with one quick check-for-understanding question.", "grade_system": "You grade a beginner's \"teach-back\" explanation (the Feynman technique). Reply in under 90 words with:\nScore: X/5\nRight: one line\nMissing or wrong: one or two lines, specific\nThen one follow-up question that forces deeper recall. Be honest, not nice. No em dashes.", "lessons": [{"id": "print", "title": "print() and values", "ch": "1-2", "min": 15, "explain": "`print()` shows something on the screen. It is how your program talks to you.\n\n**Strings** are text and go in quotes: `\"AAPL\"`. **Numbers** have no quotes: `25000` or `0.07`.\n\nGive `print` several things separated by commas and it puts a space between them.\n\nA line starting with `#` is a **comment**. Python ignores it. Use comments to explain your thinking.", "example": "# A comment: Python ignores this line\nprint(\"Portfolio value:\")\nprint(10000)\nprint(\"Return:\", 0.07)\nprint(\"Shares x price =\", 12 * 150)\n", "predict": {"code": "print(\"AAPL\", 5 * 2)", "choices": ["AAPL 10", "AAPL 5 * 2", "AAPL10", "Error"], "answer": 0, "why": "Python does the math first (5 * 2 = 10), and print puts a space between items separated by commas."}, "task": "Print exactly these two lines:\n```\nClient: Smith\nBalance: 25000\n```", "starter": "# Write your two print() lines below\n", "tests": [{"d": "Output is exactly the two lines", "t": "out.strip().splitlines() == ['Client: Smith', 'Balance: 25000']", "h": "Check spelling, capitals, and the colon followed by one space."}], "hints": ["You need two separate print() calls, one per line.", "Text goes inside quotes. Capital letters matter.", "The first line is: print(\"Client: Smith\")"], "cards": [{"q": "What does print(\"A\", 3) show?", "a": "A 3  (comma = space between items)"}, {"q": "How do you write a comment in Python?", "a": "Start the line with #"}, {"q": "Difference between 25000 and \"25000\"?", "a": "25000 is a number (math works). \"25000\" is a string (text)."}]}, {"id": "vars", "title": "Variables, math, and f-strings", "ch": "2", "min": 20, "explain": "A **variable** is a name that stores a value. `=` means \"store the right side in the name on the left\". It is NOT \"equals\" like in math.\n\n`balance = balance * 1.07` means: take the old balance, multiply by 1.07, store it back.\n\nMath operators: `+ - * /`, `**` is power (`2 ** 3` is 8), `//` divides and drops the decimal, `%` is the remainder.\n\nAn **f-string** drops variables into text: `f\"Value: {balance}\"`. Add a format after a colon: `{balance:,.2f}` means commas + 2 decimals, so 5618.0 becomes `5,618.00`. Put a `$` in front of the braces for money.", "example": "balance = 10000\nrate = 0.07\nbalance = balance * (1 + rate)\nprint(balance)\nprint(f\"After 1 year: ${balance:,.2f}\")\nprint(f\"Rate as percent: {rate:.0%}\")\n", "predict": {"code": "x = 5\nx = x + 2\nx = x * 3\nprint(x)", "choices": ["21", "17", "15", "7"], "answer": 0, "why": "Each line uses the CURRENT value: 5, then 7, then 7 * 3 = 21."}, "task": "Calculate `after2`, the value of `start` after **2 years** of compounding at `rate`. Then print it formatted like `$5,618.00`.", "starter": "start = 5000\nrate = 0.06\n\n# compute after2 (2 years of compounding)\n\n# print it like $5,618.00\n", "tests": [{"d": "after2 exists and is correct", "t": "abs(after2 - 5618) < 0.01", "h": "Compound means growth on growth: multiply by (1 + rate) once per year."}, {"d": "Printed as $5,618.00", "t": "'$5,618.00' in out", "h": "Use an f-string with the format :,.2f and a $ before the braces."}], "hints": ["Compounding twice means multiplying by (1 + rate) two times, or using ** 2.", "Money format: f\"${value:,.2f}\"", "after2 = start * (1 + rate) ** 2"], "cards": [{"q": "What does ** do?", "a": "Power. 2 ** 3 = 8"}, {"q": "Format x = 1234.5 as $1,234.50", "a": "f\"${x:,.2f}\""}, {"q": "What does x = x + 1 do?", "a": "Reads the old x, adds 1, stores the result back in x"}, {"q": "Formula: value after n years compounding", "a": "start * (1 + rate) ** n"}]}, {"id": "input", "title": "input() and type conversion", "ch": "2", "min": 20, "explain": "`input(\"Question? \")` waits for the user to type something and gives it back as a **string**. ALWAYS a string, even if they type 16.\n\nThat causes the classic bug: `\"5\" + \"5\"` is `\"55\"` (text glued together), not 10.\n\nFix it with **type conversion**: `int(\"16\")` gives 16, `float(\"0.07\")` gives 0.07.\n\nIn this app, type input values in the **Input lines** box, one per line.", "example": "age = input(\"Age? \")\nprint(age + \"1\")      # text glued together\nage = int(age)\nprint(age + 1)        # real math\n", "example_inputs": ["16"], "predict": {"code": "x = \"10\"\ny = \"5\"\nprint(x + y)", "choices": ["105", "15", "Error", "10 5"], "answer": 0, "why": "Both are strings, so + glues them together: \"10\" + \"5\" = \"105\"."}, "task": "Ask for an **amount** and a number of **years** (two `input()` calls). Print the value after compounding at **7% per year**, formatted like `$1,070.00`.", "starter": "# 1. ask for the amount\n# 2. ask for the years\n# 3. convert them\n# 4. compute and print\n", "inputs": ["1000", "1"], "tests": [{"d": "1000 for 1 year prints $1,070.00", "t": "'$1,070.00' in rerun(['1000', '1'])", "h": "Convert the amount with float() and years with int()."}, {"d": "2500 for 10 years prints $4,917.88", "t": "'$4,917.88' in rerun(['2500', '10'])", "h": "Use ** years, not * years."}], "hints": ["Call input() twice and store each answer in its own variable.", "amount = float(input(\"Amount? \")) converts in one line.", "value = amount * 1.07 ** years, then print with f\"${value:,.2f}\""], "cards": [{"q": "What type does input() return?", "a": "Always a string (str)"}, {"q": "Convert \"3.5\" to a number", "a": "float(\"3.5\")"}, {"q": "What is \"5\" + \"5\"?", "a": "\"55\" (strings glue together)"}]}, {"id": "if", "title": "if / elif / else", "ch": "3", "min": 20, "explain": "**Conditionals** let your program make decisions.\n\n```\nif score >= 8:\n    print(\"Aggressive\")\nelif score >= 4:\n    print(\"Moderate\")\nelse:\n    print(\"Conservative\")\n```\nPython checks top to bottom and runs ONLY the first block that is true.\n\nThe colon `:` and the **indentation** (4 spaces) are required. Indentation is how Python knows what is inside the if.\n\n`==` compares, `=` assigns. Comparisons: `> < >= <= == !=`.", "example": "score = 7\nif score >= 8:\n    print(\"Aggressive portfolio\")\nelif score >= 4:\n    print(\"Moderate portfolio\")\nelse:\n    print(\"Conservative portfolio\")\n", "predict": {"code": "r = -0.05\nif r > 0:\n    print(\"gain\")\nelif r == 0:\n    print(\"flat\")\nelse:\n    print(\"loss\")", "choices": ["loss", "gain", "flat", "gain and loss"], "answer": 0, "why": "-0.05 is not > 0 and not == 0, so the else block runs."}, "task": "Read a yearly return as a decimal with `input()` (like `0.12`). Print:\n- `Beat the market` if it is above 0.10\n- `Positive` if it is above 0\n- `No gain` otherwise", "starter": "ret = float(input(\"Return? \"))\n\n# your if / elif / else here\n", "inputs": ["0.15"], "tests": [{"d": "0.15 -> Beat the market", "t": "'Beat the market' in rerun(['0.15'])"}, {"d": "0.05 -> Positive only", "t": "'Positive' in rerun(['0.05']) and 'Beat' not in rerun(['0.05'])", "h": "Only one message should print. Use elif, not a second if."}, {"d": "0.10 -> Positive (boundary)", "t": "'Positive' in rerun(['0.10']) and 'Beat' not in rerun(['0.10'])", "h": "0.10 is NOT above 0.10. Check > vs >=."}, {"d": "-0.2 and 0 -> No gain", "t": "'No gain' in rerun(['-0.2']) and 'No gain' in rerun(['0'])"}], "hints": ["Order matters: check the biggest condition (> 0.10) first.", "Structure: if ...: / elif ...: / else:", "if ret > 0.10:\n    print(\"Beat the market\")"], "cards": [{"q": "= vs ==", "a": "= stores a value. == compares two values (True/False)."}, {"q": "In if/elif/else, how many blocks run?", "a": "Only the FIRST one that is true (or else)"}, {"q": "What tells Python a line is inside the if?", "a": "Indentation (4 spaces) after a line ending in :"}]}, {"id": "func", "title": "Functions", "ch": "4", "min": 25, "explain": "A **function** is a reusable mini-program. You define it once with `def`, then **call** it as many times as you want.\n\n```\ndef grow(balance, rate):\n    return balance * (1 + rate)\n```\n`balance` and `rate` are **parameters** (inputs). `return` sends a value BACK to whoever called it.\n\n**return vs print**: print only shows text on screen. return hands a value back so you can store it and use it. If a function has no return, it gives back `None`.\n\nEvery real project (including your Monte Carlo) is built from small functions.", "example": "def grow(balance, rate):\n    return balance * (1 + rate)\n\nnew = grow(1000, 0.05)\nprint(new)\nprint(grow(new, 0.05))   # reuse it\n", "predict": {"code": "def f(x):\n    print(x * 2)\n\ny = f(3)\nprint(y)", "choices": ["6 then None", "6 then 6", "None", "6"], "answer": 0, "why": "f prints 6, but has no return, so y gets None. This is the print vs return trap."}, "task": "Write two functions:\n- `future_value(pv, rate, years)` returns pv grown by rate for that many years\n- `pct_change(old, new)` returns the change as a decimal (100 -> 125 is 0.25)\n\nThey must **return**, not print.", "starter": "def future_value(pv, rate, years):\n    pass  # replace with your code\n\ndef pct_change(old, new):\n    pass\n\nprint(future_value(1000, 0.1, 2))\nprint(pct_change(100, 125))\n", "tests": [{"d": "future_value(1000, 0.1, 2) == 1210", "t": "abs(future_value(1000, 0.1, 2) - 1210) < 1e-6", "h": "Did you return the value (not print it)?"}, {"d": "future_value(500, 0, 5) == 500", "t": "abs(future_value(500, 0, 5) - 500) < 1e-9"}, {"d": "pct_change(100, 125) == 0.25", "t": "abs(pct_change(100, 125) - 0.25) < 1e-9", "h": "Change divided by the OLD value."}, {"d": "pct_change(200, 150) == -0.25", "t": "abs(pct_change(200, 150) + 0.25) < 1e-9"}], "hints": ["Replace pass with a return line in each function.", "future_value uses the compounding formula from the variables lesson.", "pct_change: return (new - old) / old"], "cards": [{"q": "return vs print", "a": "return hands a value back to the caller. print only shows text."}, {"q": "What does a function with no return give back?", "a": "None"}, {"q": "Percent change formula", "a": "(new - old) / old"}, {"q": "What are parameters?", "a": "The input names in def f(a, b): that receive the values you pass in"}]}, {"id": "for", "title": "for loops and range()", "ch": "5", "min": 20, "explain": "A **for loop** repeats code. `range(n)` gives the numbers 0 up to n-1. `range(1, 4)` gives 1, 2, 3 (the end is NOT included).\n\n```\nfor year in range(1, 4):\n    balance = balance * 1.10\n```\nEverything indented under the `for` runs once per number. This is exactly how you simulate money growing year by year.", "example": "balance = 1000\nfor year in range(1, 4):\n    balance = balance * 1.10\n    print(year, round(balance, 2))\nprint(\"Done. Final:\", round(balance, 2))\n", "predict": {"code": "for i in range(3):\n    print(i)", "choices": ["0 1 2 (one per line)", "1 2 3", "0 1 2 3", "3"], "answer": 0, "why": "range(3) starts at 0 and stops BEFORE 3."}, "task": "Print a 5-year growth table for **$1,000 at 8%**, one line per year, exactly like:\n```\nYear 1: $1,080.00\nYear 2: $1,166.40\n...\nYear 5: $1,469.33\n```", "starter": "balance = 1000\n\n# loop over years 1 to 5\n", "tests": [{"d": "Year 1 line correct", "t": "'Year 1: $1,080.00' in out"}, {"d": "Year 5 line correct", "t": "'Year 5: $1,469.33' in out", "h": "Update balance INSIDE the loop before printing."}, {"d": "Exactly 5 Year lines", "t": "out.count('Year') == 5", "h": "range(1, 6) gives 1 to 5."}], "hints": ["for year in range(1, 6):", "Inside the loop: grow balance by 8%, then print.", "print(f\"Year {year}: ${balance:,.2f}\")"], "cards": [{"q": "What numbers does range(5) give?", "a": "0, 1, 2, 3, 4"}, {"q": "What numbers does range(1, 4) give?", "a": "1, 2, 3 (end not included)"}, {"q": "How does Python know what is inside the loop?", "a": "Indentation under the for line"}]}, {"id": "while", "title": "while loops", "ch": "5", "min": 20, "explain": "A **while loop** repeats AS LONG AS a condition is true. Use it when you do not know how many times you need to loop, like \"how many years until I double my money?\"\n\n```\nwhile balance < goal:\n    balance = balance * 1.07\n    years = years + 1\n```\nDanger: if the condition never becomes false, you get an **infinite loop**. This app stops your code after 10 seconds if that happens.\n\n`break` exits a loop early.", "example": "balance = 1000\nyears = 0\nwhile balance < 2000:\n    balance = balance * 1.07\n    years = years + 1\nprint(\"Doubled in\", years, \"years\")\n", "predict": {"code": "n = 1\nwhile n < 20:\n    n = n * 3\nprint(n)", "choices": ["27", "9", "20", "Infinite loop"], "answer": 0, "why": "1 -> 3 -> 9 -> 27. The check happens at the TOP, so 9 < 20 runs once more and n becomes 27."}, "task": "Write `years_to_goal(start, rate, goal)` that **returns** how many whole years of compounding it takes for start to reach at least goal. If start already meets the goal, return 0.", "starter": "def years_to_goal(start, rate, goal):\n    years = 0\n    # your while loop here\n    return years\n\nprint(years_to_goal(1000, 0.07, 2000))\n", "tests": [{"d": "1000 at 7% to 2000 -> 11", "t": "years_to_goal(1000, 0.07, 2000) == 11"}, {"d": "Already at goal -> 0", "t": "years_to_goal(5000, 0.1, 5000) == 0", "h": "\"At least goal\" means stop when balance >= goal. Loop while balance < goal."}, {"d": "100 at 50% to 1000 -> 6", "t": "years_to_goal(100, 0.5, 1000) == 6"}], "hints": ["Use a variable balance = start before the loop.", "while balance < goal:", "Inside: grow balance, add 1 to years."], "cards": [{"q": "When to use while instead of for?", "a": "When you do not know how many repeats you need ahead of time"}, {"q": "What causes an infinite loop?", "a": "The while condition never becomes False"}, {"q": "What does break do?", "a": "Exits the loop immediately"}]}, {"id": "patterns", "title": "Loop patterns: total, count, best, worst", "ch": "5", "min": 25, "explain": "Most data analysis is a few **loop patterns**:\n\n- **Total**: start `total = 0`, add each item\n- **Count**: start `count = 0`, add 1 when a condition is true\n- **Max/Min**: start with `None`, replace when you find something bigger/smaller\n- **Average**: total / count\n\nPython has shortcuts (`sum()`, `min()`, `max()`), but building them yourself once is how you actually understand what they do. Interviews and harder projects depend on this.\n\nA function can return several values: `return avg, worst, losses`.", "example": "returns = [0.12, -0.05, 0.08, 0.20, -0.10]\ntotal = 0\ncount = 0\nbest = None\nfor r in returns:\n    total = total + r\n    count = count + 1\n    if best is None or r > best:\n        best = r\nprint(\"Average:\", total / count)\nprint(\"Best:\", best)\n", "predict": {"code": "count = 0\nfor r in [0.1, -0.2, 0.3, -0.4]:\n    if r < 0:\n        count = count + 1\nprint(count)", "choices": ["2", "4", "-0.6", "0"], "answer": 0, "why": "Only -0.2 and -0.4 are below 0, so count goes up twice."}, "task": "Write `summary(returns)` that returns three values: the **average** return, the **worst** return, and the number of **losing years** (below 0).\n\nBuild it yourself: do NOT use `sum()`, `min()`, or `max()`.", "starter": "def summary(returns):\n    total = 0\n    worst = None\n    losses = 0\n    # one loop that updates all three\n\n    return total / len(returns), worst, losses\n\nprint(summary([0.1, -0.2, 0.3, -0.4]))\n", "tests": [{"d": "Average correct", "t": "abs(summary([0.1, -0.2, 0.3, -0.4])[0] + 0.05) < 1e-9"}, {"d": "Worst correct", "t": "summary([0.1, -0.2, 0.3, -0.4])[1] == -0.4", "h": "Replace worst when it is None OR r < worst."}, {"d": "Losing years correct", "t": "summary([0.1, -0.2, 0.3, -0.4])[2] == 2"}, {"d": "Built it yourself (no sum/min/max)", "t": "'sum(' not in code and 'min(' not in code and 'max(' not in code", "h": "Do it with the loop patterns, not the shortcuts."}], "hints": ["for r in returns: then three updates inside.", "if worst is None or r < worst: worst = r", "if r < 0: losses = losses + 1"], "cards": [{"q": "Starting value for a running total?", "a": "0"}, {"q": "Starting value when tracking a max/min?", "a": "None (then replace on first item)"}, {"q": "How does a function return 3 things?", "a": "return a, b, c  (comes back as a tuple)"}]}, {"id": "lists", "title": "Lists", "ch": "8", "min": 25, "explain": "A **list** holds many values in order: `prices = [150, 152, 149]`.\n\n- `prices[0]` is the first item, `prices[-1]` is the last (**indexing** starts at 0)\n- `prices.append(158)` adds to the end\n- `len(prices)` is how many items\n- `prices.sort()` sorts the list itself (changes it)\n- `sorted(prices)` returns a NEW sorted list and leaves the original alone\n\nThe **median** is the middle of the sorted list. For an even number of items, it is the average of the two middle ones. Medians matter in finance because one huge outlier wrecks an average.", "example": "prices = [150, 152, 149, 155]\nprices.append(158)\nprint(prices[0], prices[-1])   # first, last\nprint(len(prices))\ns = sorted(prices)\nprint(s)\nprint(\"Median:\", s[len(s) // 2])\n", "predict": {"code": "nums = [30, 10, 20]\nnums.sort()\nprint(nums[0], nums[-1])", "choices": ["10 30", "30 20", "30 10", "10 20"], "answer": 0, "why": "After sort the list is [10, 20, 30]. [0] is first, [-1] is last."}, "task": "Write two functions:\n- `daily_returns(prices)` returns a list of returns between each day and the day before: (today - yesterday) / yesterday\n- `median(values)` returns the median WITHOUT changing the original list (handle odd and even lengths)", "starter": "def daily_returns(prices):\n    result = []\n    # loop from index 1 to the end\n    return result\n\ndef median(values):\n    s = sorted(values)\n    # odd vs even length\n\nprint(daily_returns([100, 110, 99]))\nprint(median([4, 1, 3, 2]))\n", "tests": [{"d": "daily_returns([100, 110, 99]) == [0.1, -0.1]", "t": "all(abs(a - b) < 1e-9 for a, b in zip(daily_returns([100, 110, 99]), [0.1, -0.1])) and len(daily_returns([100, 110, 99])) == 2"}, {"d": "4 prices -> 3 returns", "t": "len(daily_returns([1, 2, 3, 4])) == 3", "h": "Use range(1, len(prices)) so you always have a yesterday."}, {"d": "Odd median: [3, 1, 2] -> 2", "t": "median([3, 1, 2]) == 2"}, {"d": "Even median: [4, 1, 3, 2] -> 2.5", "t": "median([4, 1, 3, 2]) == 2.5", "h": "Even length: average s[n//2 - 1] and s[n//2]."}, {"d": "Original list not changed", "t": "(lambda v: (median(v), v)[1])([3, 1, 2]) == [3, 1, 2]", "h": "Use sorted(values), not values.sort()."}], "hints": ["for i in range(1, len(prices)): uses prices[i] and prices[i - 1]", "result.append(...) inside the loop", "n = len(s); if n % 2 == 1: return s[n // 2]"], "cards": [{"q": "What does lst[-1] give?", "a": "The last item"}, {"q": "sort() vs sorted()", "a": "lst.sort() changes the list. sorted(lst) returns a new list."}, {"q": "Why use median over average in finance?", "a": "Outliers barely move the median, but can wreck the average"}, {"q": "Index of the first item?", "a": "0"}]}, {"id": "random", "title": "Randomness and simulation", "ch": "extra", "min": 25, "explain": "`import random` loads Python's random tools:\n\n- `random.random()` gives a decimal from 0 to 1\n- `random.gauss(mean, stdev)` gives a number from a **normal distribution** (bell curve). `random.gauss(0.07, 0.15)` is a fake yearly stock return: usually near 7%, about 68% of the time between -8% and +22%\n- `random.seed(42)` makes the \"random\" numbers repeat every run (great for debugging)\n\n**Monte Carlo simulation** = run thousands of random futures and study the spread of outcomes. Instead of \"you will have $X\", you can say \"there is a 10% chance you end below $Y\". That is how real financial planners talk about risk.\n\nFormat percents with `{r:.1%}`.", "example": "import random\nrandom.seed(42)\nfor i in range(5):\n    r = random.gauss(0.07, 0.15)\n    print(f\"Year {i + 1} return: {r:.1%}\")\n", "predict": {"code": "import random\nr = random.gauss(0.07, 0.15)\n# Which statement is true about r?", "choices": ["Usually lands between -8% and +22%", "Always between 7% and 15%", "Can never be negative", "Is 7% every time"], "answer": 0, "why": "Mean 0.07, standard deviation 0.15. About 68% of results fall within one stdev: 0.07 - 0.15 to 0.07 + 0.15."}, "task": "Write `flip_heads(n)` that flips a fair coin n times using `random.random() < 0.5` as \"heads\" and **returns the fraction** of flips that were heads.", "starter": "import random\n\ndef flip_heads(n):\n    heads = 0\n    # flip n times\n    return heads / n\n\nprint(flip_heads(10000))\n", "tests": [{"d": "10,000 flips land near 0.5", "t": "0.45 < flip_heads(10000) < 0.55"}, {"d": "1 flip returns 0.0 or 1.0", "t": "flip_heads(1) in (0.0, 1.0)"}, {"d": "Results actually vary", "t": "len(set(flip_heads(10) for _ in range(30))) > 1", "h": "Call random.random() inside the loop, once per flip."}], "hints": ["for _ in range(n):", "if random.random() < 0.5: heads = heads + 1", "The return line in the starter already divides by n."], "cards": [{"q": "What does random.gauss(0.07, 0.15) model?", "a": "A yearly return averaging 7% with 15% volatility (bell curve)"}, {"q": "Why use random.seed()?", "a": "Makes random results repeatable for debugging"}, {"q": "What is a Monte Carlo simulation?", "a": "Running many random scenarios to see the range and odds of outcomes"}]}], "mc_steps": [{"title": "One year of growth", "goal": "Write `one_year(balance)`.\n\nIt should draw a random return with `random.gauss(MEAN, STDEV)` and **return** the new balance.\n\nUse `import random` and `random.gauss(...)` (not `from random import gauss`) so the tests can control the dice.", "append": "import random\n\nMEAN = 0.07    # average yearly return (7%)\nSTDEV = 0.15   # volatility (15%)\n\ndef one_year(balance):\n    # 1. draw a random return\n    # 2. return the new balance\n    pass\n", "tests": [{"d": "With a 10% return, 100 -> 110", "t": "fixed_gauss(0.10) and abs(one_year(100) - 110) < 1e-9", "h": "new balance = balance * (1 + r)"}, {"d": "With a -50% return, 200 -> 100", "t": "fixed_gauss(-0.5) and abs(one_year(200) - 100) < 1e-9"}, {"d": "Uses randomness (returns vary)", "t": "len(set(one_year(100) for _ in range(20))) > 1", "h": "Call random.gauss(MEAN, STDEV) inside the function."}], "hints": ["r = random.gauss(MEAN, STDEV)", "Growth is balance * (1 + r)", "return balance * (1 + r)"]}, {"title": "One full future", "goal": "Write `simulate(start, years)` that calls `one_year` once per year and **returns** the final balance. This is ONE possible future.", "append": "\n\ndef simulate(start, years):\n    balance = start\n    # loop years times\n    return balance\n", "tests": [{"d": "10% for 2 years: 100 -> 121", "t": "fixed_gauss(0.10) and abs(simulate(100, 2) - 121) < 1e-9"}, {"d": "0% for 30 years stays 500", "t": "fixed_gauss(0.0) and abs(simulate(500, 30) - 500) < 1e-9"}, {"d": "0 years returns start", "t": "simulate(1000, 0) == 1000"}], "hints": ["for _ in range(years):", "Reuse your function: balance = one_year(balance)", "Make sure return is NOT indented inside the loop."]}, {"title": "Thousands of futures", "goal": "Write `run_many(start, years, n)` that runs `simulate` n times and **returns a list** of all n final balances.", "append": "\n\ndef run_many(start, years, n):\n    finals = []\n    # run n simulations\n    return finals\n", "tests": [{"d": "Returns n results", "t": "len(run_many(100, 5, 50)) == 50"}, {"d": "Results are different futures", "t": "len(set(run_many(100, 5, 20))) > 1"}, {"d": "All balances positive", "t": "all(x > 0 for x in run_many(100, 5, 200))"}], "hints": ["This is the list + append pattern.", "for _ in range(n):", "finals.append(simulate(start, years))"]}, {"title": "Read the results", "goal": "Write `summarize(finals, start)` that returns three values:\n- **median**: the middle of the sorted list, use `s[n // 2]`\n- **p10**: the 10th percentile, the \"bad luck\" outcome, use `s[n // 10]`\n- **prob_loss**: the fraction of futures that ended below `start`", "append": "\n\ndef summarize(finals, start):\n    s = sorted(finals)\n    n = len(s)\n    # median, p10, prob_loss\n", "tests": [{"d": "Median of 1..10 is 6", "t": "summarize(list(range(1, 11)), 5)[0] == 6"}, {"d": "10th percentile of 1..10 is 2", "t": "summarize(list(range(1, 11)), 5)[1] == 2"}, {"d": "Chance of ending below 5 is 0.4", "t": "abs(summarize(list(range(1, 11)), 5)[2] - 0.4) < 1e-9", "h": "Count values < start (loop pattern), divide by n."}], "hints": ["median = s[n // 2] and p10 = s[n // 10]", "Count with a loop: if x < start: losses += 1", "return median, p10, losses / n"]}, {"title": "Run it like a planner", "goal": "At the bottom, run **10,000** simulations of **$10,000** for **30 years**, then print three labeled lines using money and percent formatting:\n```\nMedian: $...\nWorst 10%: $...\nChance of loss: ...%\n```\nRun it a few times. Notice the numbers barely move. That stability is why 10,000 runs is enough.", "append": "\n\n# ---- main ----\n", "tests": [{"d": "Prints a Median line in dollars", "t": "'Median: $' in out"}, {"d": "Prints a Worst 10% line in dollars", "t": "'Worst 10%: $' in out"}, {"d": "Prints Chance of loss as a percent", "t": "'Chance of loss:' in out and '%' in out.split('Chance of loss:')[1]", "h": "Format with {prob:.1%}"}, {"d": "Median looks realistic ($30k to $100k)", "t": "30000 < float(out.split('Median: $')[1].split()[0].replace(',', '')) < 100000", "h": "Check you used 10000 start, 30 years, and MEAN 0.07."}], "hints": ["finals = run_many(10000, 30, 10000)", "median, p10, prob = summarize(finals, 10000)", "print(f\"Median: ${median:,.0f}\")"]}, {"title": "Explain it to a client", "teach": true, "goal": "Write 3 to 5 sentences to a client (no code):\n1. What the **Worst 10%** number means for them\n2. Why the median is NOT a promise\n3. One real limitation of this model (hint: are real returns a perfect bell curve? what about fees, inflation, withdrawals?)\n\nGet it graded by the tutor. This step is what turns a script into something you can talk about in an interview or college essay.", "append": "", "tests": [], "hints": []}], "mc_cards": [{"q": "Monte Carlo: why run 10,000 sims instead of 1?", "a": "One run is one random future. Many runs show the range and odds of outcomes."}, {"q": "What is the 10th percentile outcome?", "a": "10% of futures ended at or below it: a \"bad luck\" scenario"}, {"q": "Growth formula for one year with return r", "a": "balance * (1 + r)"}, {"q": "One limitation of a normal-distribution return model", "a": "Real returns have fatter tails (crashes happen more than a bell curve predicts); also ignores fees, inflation, withdrawals"}], "projects": [{"id": "mc", "guided": true, "name": "Monte Carlo portfolio simulator", "tag": "Simulate 10,000 possible futures for an investment", "college": 2, "collegePlus": 4, "hours": "4-6", "perDay": "20-40", "difficulty": 2, "fit": 5, "lessons": ["vars", "func", "for", "lists", "random"], "why": "This is literally how financial planners show clients the odds of hitting retirement goals. Core wealth-management tool.", "standout": "Alone it is a tutorial-sized script (about 30 lines), which admissions readers will not notice. It becomes a 4 if you add withdrawals + inflation, a chart, and a one-page write-up explaining the results to a real person."}, {"id": "compound", "name": "Savings goal calculator", "tag": "How much to save monthly to hit a goal by a date", "college": 1, "collegePlus": 2, "hours": "2-3", "perDay": "15-30", "difficulty": 1, "fit": 4, "lessons": ["vars", "input", "func", "while"], "why": "Teaches time value of money, the foundation of every financial plan.", "standout": "Very common beginner project. Good practice, weak resume item. Use it as a warm-up, not a showcase.", "milestones": ["Future value of a lump sum", "Future value with monthly contributions (loop month by month)", "Solve for the monthly amount needed (while loop guess and adjust)", "Ask the user for inputs and print a clean summary"]}, {"id": "amort", "name": "Loan and mortgage amortization table", "tag": "Payment schedule: interest vs principal each month", "college": 2, "collegePlus": 3, "hours": "3-5", "perDay": "20-40", "difficulty": 2, "fit": 4, "lessons": ["vars", "func", "for", "lists"], "why": "Clients ask \"should I pay off my mortgage or invest?\" constantly. This is the math behind that answer.", "standout": "Stands out if you add the \"extra payment\" comparison: how much interest and time you save.", "milestones": ["Monthly payment formula as a function", "Loop over months: interest, principal, remaining balance", "Print a formatted table", "Compare with an extra $200/month: interest saved, months saved"]}, {"id": "rebal", "name": "Portfolio rebalancer", "tag": "Given holdings and target %, what to buy and sell", "college": 3, "collegePlus": 4, "hours": "5-8", "perDay": "20-45", "difficulty": 2, "fit": 5, "lessons": ["func", "for", "lists", "patterns"], "why": "Rebalancing is a daily wealth-management task. Very direct fit for advisory work.", "standout": "Add a \"drift threshold\" (only rebalance if off by 5%+) and tax awareness (prefer selling losers). That shows real-world judgment.", "milestones": ["Store holdings with dictionaries (PY4E Ch 9)", "Calculate current % weights", "Calculate dollars to buy/sell per holding", "Only trade holdings that drifted past a threshold", "Round to whole shares and report leftover cash"]}, {"id": "risk", "name": "Risk metrics report from price data", "tag": "Return, volatility, Sharpe ratio, max drawdown from a CSV", "college": 3, "collegePlus": 4, "hours": "8-12", "perDay": "30-45", "difficulty": 3, "fit": 5, "lessons": ["func", "patterns", "lists"], "why": "These are the exact numbers on every fund fact sheet. Understanding them makes you sound like an analyst.", "standout": "Strong if you compare 3 to 5 real funds and write what the numbers mean for a client. Needs file reading (PY4E Ch 7).", "milestones": ["Read a CSV of daily prices (PY4E Ch 7)", "Daily returns (you already wrote this)", "Average return and volatility (standard deviation) by hand", "Max drawdown: worst peak-to-trough drop", "Sharpe ratio and a printed comparison of several funds"]}, {"id": "riskq", "name": "Client risk questionnaire to model portfolio", "tag": "Ask questions, score risk tolerance, suggest an allocation", "college": 3, "collegePlus": 4, "hours": "5-8", "perDay": "20-40", "difficulty": 2, "fit": 5, "lessons": ["input", "if", "func", "lists"], "why": "Every advisory firm onboards clients with a questionnaire like this. Easy to explain in an interview.", "standout": "Combine it with your Monte Carlo: questionnaire picks the allocation, simulator shows the odds. That combo reads as a real tool. Note: real advice requires licensing, so frame it as educational.", "milestones": ["5 to 8 questions with input() and validation", "Score answers with if/elif", "Map score to a stock/bond allocation", "Feed the allocation into your Monte Carlo (MEAN and STDEV change with the mix)"]}, {"id": "retire", "name": "Retirement planner with inflation and withdrawals", "tag": "Will the money last? Odds of running out", "college": 4, "collegePlus": 5, "hours": "10-15", "perDay": "30-60", "difficulty": 3, "fit": 5, "lessons": ["func", "for", "while", "lists", "random"], "why": "The single most important question in wealth management. Natural upgrade of your Monte Carlo.", "standout": "Model the 4% rule and test it: \"how often does a 4% withdrawal fail over 30 years?\" That is a real research question with a clear answer you can present.", "milestones": ["Start from your Monte Carlo code", "Add yearly withdrawals that grow with inflation", "Track if a future runs out of money and when", "Report success rate for withdrawal rates 3%, 4%, 5%", "Write a one-page summary of findings"]}, {"id": "backtest", "name": "Moving-average strategy backtester", "tag": "Test a trading rule on historical prices", "college": 3, "collegePlus": 4, "hours": "12-20", "perDay": "30-60", "difficulty": 3, "fit": 3, "lessons": ["func", "patterns", "lists"], "why": "Ties to your trading interest, but it is trading, not wealth management, so fit is lower.", "standout": "Warning: beginners almost always overfit (tune the rule until the past looks great) and then the rule fails live. Showing you understand that, by testing on data you did not tune on and comparing to buy-and-hold, is what makes it impressive.", "milestones": ["Load historical prices from CSV", "Compute a moving average", "Generate buy/sell signals", "Simulate trades with fees", "Compare to buy-and-hold on unseen data"]}, {"id": "tlh", "name": "Tax-loss harvesting scanner", "tag": "Find positions you could sell at a loss to cut taxes", "college": 4, "collegePlus": 4, "hours": "8-12", "perDay": "30-45", "difficulty": 3, "fit": 5, "lessons": ["func", "lists", "patterns", "if"], "why": "Niche, advisor-level skill that few high schoolers know exists. Shows genuine domain knowledge.", "standout": "Must handle the wash-sale rule (no repurchasing the same security within 30 days). Getting that right is the impressive part. Educational only, not tax advice.", "milestones": ["Store tax lots: ticker, shares, cost basis, buy date", "Compare to current price, find unrealized losses", "Flag wash-sale conflicts in a 30-day window", "Estimate tax saved at a given tax rate"]}, {"id": "frontier", "name": "Efficient frontier optimizer", "tag": "Modern Portfolio Theory: best return for each risk level", "college": 4, "collegePlus": 5, "hours": "15-25", "perDay": "45-60", "difficulty": 4, "fit": 5, "lessons": ["func", "lists", "random", "patterns"], "why": "Nobel-prize finance (Markowitz). College-level concept, which is why it reads well.", "standout": "Do it after 3+ other projects. Uses numpy. The easy version: generate thousands of random portfolios (Monte Carlo again) and pick the best Sharpe ratio.", "milestones": ["Returns for 3 to 5 assets", "Covariance with numpy", "Thousands of random weightings", "Plot risk vs return and mark the best Sharpe"]}, {"id": "capstone", "name": "Capstone: family financial planning toolkit", "tag": "Combine your projects into one tool real people use", "college": 5, "collegePlus": 5, "hours": "40+", "perDay": "30-60", "difficulty": 4, "fit": 5, "lessons": ["func", "lists", "random"], "why": "Depth + impact + a story connecting to your intended major is what admissions actually rewards.", "standout": "The 5/5 comes from REAL users and evidence: \"used by 15 families\" or \"used at a workshop I ran\", plus a write-up. Code alone without users is a 3.", "milestones": ["Questionnaire -> allocation -> Monte Carlo -> retirement odds", "Simple web interface", "Get 10+ real people to use it and collect feedback", "Write up results and what you changed"]}], "college_note": "Honest take: admissions readers care about **depth, impact, and a clear story**, not how many scripts you wrote. They usually cannot judge code quality. What reads well: a project that grew over months, that real people used, with a short write-up showing you understand the finance. A single small script, alone, barely registers. Ratings shown are estimates, not guarantees."}</script>
+<script>
+const DATA = JSON.parse(document.getElementById('data').textContent);
+const LESSONS = DATA.lessons, LMAP = Object.fromEntries(LESSONS.map(l => [l.id, l]));
+const PROJECTS = DATA.projects, PMAP = Object.fromEntries(PROJECTS.map(p => [p.id, p]));
+const MC = DATA.mc_steps;
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function md(s) {
+  s = esc(s);
+  const parts = [];
+  s = s.replace(/```[a-z]*\n?([\s\S]*?)```/g, (m, c) => { parts.push('<pre class="code">' + c.replace(/\n$/, '') + '</pre>'); return '\u0000' + (parts.length - 1) + '\u0000'; });
+  s = s.replace(/`([^`\n]+)`/g, (m, c) => { parts.push('<code>' + c + '</code>'); return '\u0000' + (parts.length - 1) + '\u0000'; }).replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+  return s.replace(/\u0000(\d+)\u0000/g, (m, i) => parts[i]);
+}
+const hintMd = h => md(h.includes('\n') ? '```\n' + h + '\n```' : h);
+function toast(t, ms = 2600) { const el = $('#toast'); el.textContent = t; el.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(() => el.style.display = 'none', ms); }
+const today = () => new Date().toLocaleDateString('en-CA');
+const dots = n => '<span class="dots">' + '●'.repeat(n) + '<i>' + '●'.repeat(5 - n) + '</i></span>';
+
+/* ---------- state ---------- */
+const KEY = 'forge_v1';
+let S; try { S = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { S = {}; }
+S.done ??= {}; S.code ??= {}; S.cards ??= []; S.hints ??= {}; S.mc ??= {}; S.teach ??= {};
+S.settings ??= { model: 'claude-haiku-5-5' }; S.streak ??= { last: '', count: 0 }; S.mins ??= 15;
+let saveT;
+function save() { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { toast('WARNING: progress not saved: ' + e.message, 6000); } }, 200); }
+function activity() {
+  const t = today(); if (S.streak.last === t) return;
+  const y = new Date(Date.now() - 864e5).toLocaleDateString('en-CA');
+  S.streak.count = S.streak.last === y ? S.streak.count + 1 : 1; S.streak.last = t; save();
+}
+const lessonDone = id => !!(S.done[id] && S.done[id].ex);
+const getKey = () => { try { return localStorage.getItem('forge_key') || ''; } catch (e) { return ''; } };
+
+/* ---------- Python runner (Web Worker so infinite loops can be stopped) ---------- */
+const WORKER_SRC = `
+importScripts('https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js');
+let py;
+const ready = (async () => { py = await loadPyodide(); py.runPython(HARNESS); postMessage({type:'ready'}); })().catch(e => postMessage({type:'fatal', err:String(e)}));
+onmessage = async (e) => {
+  await ready; const m = e.data;
+  try { await py.loadPackagesFromImports(m.code); } catch (err) {}
+  try { py.globals.set('J', JSON.stringify(m)); const r = py.runPython('_entry(J)'); postMessage(Object.assign({type:'result', id:m.id}, JSON.parse(r))); }
+  catch (err) { postMessage({type:'result', id:m.id, out:'', err:String(err), results:[]}); }
+};`;
+let worker, wReady = false, wWait = [], pending = {}, runId = 0;
+function startWorker() {
+  wReady = false;
+  const blob = new Blob(['const HARNESS = ' + JSON.stringify(DATA.harness) + ';\n' + WORKER_SRC], { type: 'text/javascript' });
+  worker = new Worker(URL.createObjectURL(blob));
+  worker.onmessage = e => {
+    const m = e.data;
+    if (m.type === 'ready') { wReady = true; wWait.forEach(f => f()); wWait = []; setStatus(''); }
+    else if (m.type === 'fatal') setStatus('Python failed to load. Check your internet connection and reload.');
+    else if (m.type === 'result' && pending[m.id]) { pending[m.id](m); delete pending[m.id]; }
+  };
+}
+function setStatus(t) { document.querySelectorAll('.pystatus').forEach(el => el.textContent = t); }
+function whenReady() { return wReady ? Promise.resolve() : new Promise(r => { setStatus('Loading Python (first time takes ~10s)...'); wWait.push(r); }); }
+async function runPy(code, inputs = [], tests = []) {
+  if (!worker) startWorker();
+  await whenReady();
+  const id = ++runId;
+  return new Promise(res => {
+    const timer = setTimeout(() => {
+      delete pending[id]; worker.terminate(); startWorker();
+      res({ out: '', err: 'Stopped after 10 seconds. Most likely an infinite loop (a while condition that never becomes False).', results: [] });
+    }, 10000);
+    pending[id] = m => { clearTimeout(timer); res(m); };
+    worker.postMessage({ id, code, inputs, tests });
+  });
+}
+const LAST = {};
+function showOut(el, r) {
+  el.style.display = 'block';
+  let h = '';
+  if (r.out) h += esc(r.out);
+  if (r.err) h += '<span class="err">' + esc(r.err) + '</span>';
+  if (r.results && r.results.length) {
+    h += (h ? '\n\n' : '') + '<b>Checks</b>\n' + r.results.map(t => (t.p ? '<span class="pass">PASS</span> ' : '<span class="fail">FAIL</span> ') + esc(t.d) + (t.m && !t.p ? '\n     ' + esc(t.m) : '')).join('\n');
+  }
+  el.innerHTML = h || '<span class="muted">(no output: did you forget print?)</span>';
+}
+
+/* ---------- editor ---------- */
+let post = [], CUR = null;
+function ed(key, starter, rows = 10) {
+  const id = 'ed' + Math.random().toString(36).slice(2, 9);
+  post.push(() => { const t = document.getElementById(id); t.value = S.code[key] ?? starter; bindEd(t, key); });
+  return `<textarea id="${id}" class="ed" rows="${rows}" spellcheck="false" autocapitalize="off" autocorrect="off" autocomplete="off"></textarea>`;
+}
+function bindEd(t, key) {
+  t.dataset.key = key;
+  t.addEventListener('focus', () => CUR = key);
+  t.addEventListener('input', () => { S.code[key] = t.value; save(); });
+  t.addEventListener('keydown', e => {
+    const s = t.selectionStart, v = t.value;
+    if (e.key === 'Tab') { e.preventDefault(); t.setRangeText('    ', s, t.selectionEnd, 'end'); t.dispatchEvent(new Event('input')); }
+    else if (e.key === 'Enter') {
+      e.preventDefault();
+      const line = v.slice(v.lastIndexOf('\n', s - 1) + 1, s);
+      let ind = line.match(/^\s*/)[0]; if (/:\s*$/.test(line)) ind += '    ';
+      t.setRangeText('\n' + ind, s, t.selectionEnd, 'end'); t.dispatchEvent(new Event('input'));
+    }
+  });
+}
+const edVal = key => { const t = document.querySelector(`textarea.ed[data-key="${key}"]`); return t ? t.value : (S.code[key] || ''); };
+function setEd(key, val) { S.code[key] = val; save(); const t = document.querySelector(`textarea.ed[data-key="${key}"]`); if (t) t.value = val; }
+
+/* ---------- router ---------- */
+let view = { name: 'home' };
+const TABS = [['home', 'Today'], ['learn', 'Learn'], ['projects', 'Projects'], ['review', 'Review'], ['sandbox', 'Sandbox'], ['settings', 'Settings']];
+function go(name, arg) { view = { name, arg }; render(); window.scrollTo(0, 0); }
+function render() {
+  $('#nav').innerHTML = TABS.map(([k, l]) => `<button class="${(view.name === k || (k === 'learn' && view.name === 'lesson') || (k === 'projects' && ['project', 'step'].includes(view.name))) ? 'on' : ''}" onclick="go('${k}')">${l}${k === 'review' && dueCards().length ? ' (' + dueCards().length + ')' : ''}</button>`).join('');
+  post = [];
+  const f = { home: vHome, learn: vLearn, lesson: vLesson, projects: vProjects, project: vProject, step: vStep, review: vReview, sandbox: vSandbox, settings: vSettings }[view.name];
+  $('#main').innerHTML = f(view.arg);
+  post.forEach(fn => fn());
+  if (!wReady) setStatus(worker ? 'Loading Python...' : '');
+}
+
+/* ---------- views ---------- */
+function vHome() {
+  const doneN = LESSONS.filter(l => lessonDone(l.id)).length;
+  const next = LESSONS.find(l => !lessonDone(l.id));
+  const mcDone = MC.filter((_, i) => S.mc[i]).length;
+  const due = dueCards().length;
+  const m = S.mins;
+  const plan = [];
+  plan.push(due ? `Review ${due} flashcard${due > 1 ? 's' : ''} first (5 min). Recall before you learn new stuff.` : 'No cards due. Nice.');
+  if (m >= 15) plan.push(next ? `Lesson: <a class="crumb" onclick="go('lesson','${next.id}')"><b>${esc(next.title)}</b></a> (Read + Predict${m >= 30 ? ' + Do it yourself' : ''})` : 'All lessons done. Focus on projects.');
+  if (m >= 45) plan.push(doneN >= 5 ? `Monte Carlo build: step ${Math.min(mcDone + 1, MC.length)} of ${MC.length}` : 'Finish the Teach-back for today\'s lesson, then try "Rewrite from memory".');
+  return `
+  <h2>Today</h2><div class="muted">Streak: ${S.streak.count} day${S.streak.count === 1 ? '' : 's'} · Lessons ${doneN}/${LESSONS.length} · Monte Carlo ${mcDone}/${MC.length}</div>
+  <div class="card"><div class="row" style="justify-content:space-between"><h3>How much time do you have?</h3>
+   <div>${[15, 30, 45, 60].map(x => `<button class="btn ${S.mins === x ? 'pri' : ''}" onclick="S.mins=${x};save();render()">${x}m</button>`).join('')}</div></div>
+   <ol>${plan.map(p => '<li style="margin:6px 0">' + p + '</li>').join('')}</ol>
+   <div class="row">${due ? `<button class="btn pri" onclick="go('review')">Start review</button>` : ''}${next ? `<button class="btn ${due ? '' : 'pri'}" onclick="go('lesson','${next.id}')">Next lesson</button>` : ''}<button class="btn" onclick="go('project','mc')">Monte Carlo build</button></div>
+  </div>
+  <div class="card"><h3>How this app makes it stick</h3>
+   <ul class="small">
+    <li><b>Predict before you run</b>: guessing first, then seeing if you were right, beats passively reading.</li>
+    <li><b>Do it yourself</b>: no solutions in the app. Hints come one at a time, and the tutor is told never to write your answer.</li>
+    <li><b>Teach-back</b> (Feynman technique): explain it in your own words and get graded.</li>
+    <li><b>Rewrite from memory</b>: blank editor, same tests. If you can do it cold, you own it.</li>
+    <li><b>Spaced repetition</b>: flashcards come back right before you would forget (1, 3, 7, 16, 35 days).</li>
+   </ul>
+  </div>
+  <div class="card"><h3>Pairing with the course</h3><p class="small">Lessons follow <b>Python for Everybody</b> (PY4E, Dr. Chuck). Watch the matching chapter on Coursera or free at <a style="color:var(--accent2)" href="https://www.py4e.com/lessons" target="_blank" rel="noopener">py4e.com</a>, then do the lesson here. Each lesson shows its chapter.</p></div>`;
+}
+
+function vLearn() {
+  return `<h2>Learn</h2><div class="muted small">Do these in order. Each one is a building block for the Monte Carlo project.</div>
+  <div class="grid" style="margin-top:12px">${LESSONS.map((l, i) => {
+    const d = S.done[l.id] || {};
+    return `<div class="card lesson" onclick="go('lesson','${l.id}')"><div class="small muted">Lesson ${i + 1} · PY4E ${l.ch === 'extra' ? 'bonus' : 'Ch ' + l.ch} · ~${l.min} min</div><b>${esc(l.title)}</b>
+     <div style="margin-top:8px">${pill('Predict', d.pr)}${pill('Exercise', d.ex)}${pill('Teach-back', S.teach[l.id])}${pill('From memory', d.mem)}</div></div>`;
+  }).join('')}</div>`;
+}
+const pill = (t, ok) => `<span class="pill ${ok ? 'ok' : ''}">${ok ? '✓ ' : ''}${t}</span>`;
+
+function vLesson(id) {
+  const l = LMAP[id], i = LESSONS.indexOf(l), d = S.done[id] || {}, p = l.predict;
+  const hn = S.hints['L:' + id] || 0;
+  return `<div class="crumb"><a onclick="go('learn')">Learn</a> / Lesson ${i + 1}</div>
+  <h2>${esc(l.title)}</h2><div class="muted small">PY4E ${l.ch === 'extra' ? '(not in PY4E, needed for Monte Carlo)' : 'Chapter ' + l.ch} · ~${l.min} min</div>
+  <div class="card"><h3>1. Read</h3>${md(l.explain)}
+   <div class="small muted" style="margin-top:10px">Example: run it, then change something and run again.</div>
+   ${ed('EX:' + id, l.example, Math.min(12, l.example.split('\n').length + 1))}
+   <div class="row"><button class="btn" onclick="runEx('${id}')">Run example</button><span class="small muted pystatus"></span></div>
+   <div class="out" id="out-EX-${id}"></div></div>
+
+  <div class="card"><h3>2. Predict first</h3><div class="small muted">Decide what this prints BEFORE you look. Commit to an answer.</div>
+   <pre class="code">${esc(p.code)}</pre>
+   <div id="pred-${id}">${p.choices.map((c, k) => `<button class="btn choice ${d.pr != null ? (k === p.answer ? 'right' : (k === d.pick ? 'wrong' : '')) : ''}" onclick="pick('${id}',${k})">${esc(c)}</button>`).join('')}</div>
+   ${d.pick != null ? `<div class="small" style="margin-top:6px">${d.pick === p.answer ? '<span class="pass">Correct.</span> ' : '<span class="fail">Not quite.</span> '}${esc(p.why)}</div>` : ''}</div>
+
+  <div class="card"><h3>3. Do it yourself ${d.ex ? '<span class="pill ok">✓ passed</span>' : ''}${d.memMode ? ' <span class="pill" style="color:var(--warn)">From-memory mode</span>' : ''}</h3>${md(l.task)}
+   ${ed('L:' + id, l.starter, 12)}
+   ${l.inputs ? `<div class="small muted">Input lines (one per input() call):</div><textarea id="in-${id}" rows="2">${esc((S.code['IN:' + id] ?? l.inputs.join('\n')))}</textarea>` : ''}
+   <div class="row"><button class="btn" onclick="runL('${id}',false)">Run</button><button class="btn pri" onclick="runL('${id}',true)">Check</button>
+    <button class="btn" onclick="hint('L:${id}')" ${hn >= l.hints.length ? 'disabled' : ''}>Hint (${hn}/${l.hints.length})</button>
+    <button class="btn blue" onclick="askAbout()">Ask tutor</button><button class="btn" onclick="resetCode('L:${id}', LMAP['${id}'].starter)">Reset</button><span class="small muted pystatus"></span></div>
+   <div id="hints-L:${id}">${l.hints.slice(0, hn).map((h, k) => `<div class="warn">Hint ${k + 1}: ${hintMd(h)}</div>`).join('')}</div>
+   <div class="out" id="out-L-${id}"></div></div>
+
+  <div class="card"><h3>4. Lock it in</h3>
+   <p class="small"><b>Teach-back:</b> explain this lesson like you are teaching a friend. What is it, when do you use it, what is the common mistake?</p>
+   <textarea id="teach-${id}" rows="4" placeholder="In my own words...">${esc(S.teach[id]?.text || '')}</textarea>
+   <div class="row"><button class="btn blue" onclick="gradeTeach('${id}')">Grade with tutor</button><button class="btn" onclick="saveTeach('${id}')">Save only</button></div>
+   <div id="grade-${id}" class="small">${S.teach[id]?.fb ? md(S.teach[id].fb) : ''}</div>
+   <hr style="border-color:var(--line)">
+   <p class="small"><b>Rewrite from memory:</b> ${d.ex ? 'Clears the exercise editor so you write it again with no notes. Your current code is backed up first.' : 'Unlocks after you pass the exercise.'}</p>
+   <button class="btn" onclick="memoryMode('${id}')" ${d.ex ? '' : 'disabled'}>Start from-memory challenge</button>
+   ${d.ex && S.code['BK:' + id] != null ? `<button class="btn" onclick="restore('${id}')">Restore backup</button>` : ''}
+   <p class="small muted">${l.cards.length} flashcards go to Review when you pass the exercise.</p></div>
+  <div class="row" style="justify-content:space-between">${i > 0 ? `<button class="btn" onclick="go('lesson','${LESSONS[i - 1].id}')">← Previous</button>` : '<span></span>'}${i < LESSONS.length - 1 ? `<button class="btn" onclick="go('lesson','${LESSONS[i + 1].id}')">Next →</button>` : `<button class="btn pri" onclick="go('project','mc')">Start Monte Carlo →</button>`}</div>`;
+}
+function pick(id, k) {
+  const d = S.done[id] ??= {};
+  if (d.pick == null) { d.pick = k; d.pr = true; activity(); save(); }
+  render();
+}
+async function runEx(id) {
+  const r = await runPy(edVal('EX:' + id), LMAP[id].example_inputs || []);
+  showOut(document.getElementById('out-EX-' + id), r);
+}
+async function runL(id, check) {
+  const l = LMAP[id], key = 'L:' + id;
+  let inputs = l.inputs || [];
+  const inEl = document.getElementById('in-' + id);
+  if (inEl) { S.code['IN:' + id] = inEl.value; inputs = inEl.value.split('\n').filter(x => x.length); save(); }
+  const el = document.getElementById('out-L-' + id);
+  el.style.display = 'block'; el.innerHTML = '<span class="muted">Running...</span>';
+  const r = await runPy(edVal(key), inputs, check ? l.tests : []);
+  LAST[key] = r; showOut(el, r);
+  if (check && r.results.length && r.results.every(t => t.p)) {
+    const d = S.done[id] ??= {};
+    const first = !d.ex;
+    d.ex = true;
+    if (d.memMode) { d.mem = true; d.memMode = false; toast('Rewritten from memory. You own this one.'); }
+    else toast(first ? 'Passed! Flashcards added to Review.' : 'Passed again.');
+    if (first) addCards(id, l.cards);
+    activity(); save(); laterRender();
+  }
+}
+function laterRender() { const v = view; setTimeout(() => { if (view === v) render(); }, 900); }
+function hint(key) { S.hints[key] = (S.hints[key] || 0) + 1; save(); render(); }
+function resetCode(key, starter) {
+  if (!confirm('Reset this editor to the starter code? Your current code will be lost.')) return;
+  setEd(key, starter);
+}
+function memoryMode(id) {
+  const key = 'L:' + id;
+  S.code['BK:' + id] = edVal(key);
+  setEd(key, '# From memory: no notes, no hints. Same checks.\n');
+  (S.done[id] ??= {}).memMode = true; save(); render(); toast('Old code backed up. Go.');
+}
+function restore(id) { if (confirm('Replace the editor with your backed-up code?')) { setEd('L:' + id, S.code['BK:' + id]); } }
+function saveTeach(id) { const t = document.getElementById('teach-' + id).value; S.teach[id] = Object.assign(S.teach[id] || {}, { text: t }); save(); toast('Saved'); }
+async function gradeTeach(id, isStep) {
+  const el = document.getElementById('teach-' + id), out = document.getElementById('grade-' + id);
+  const text = el.value.trim(); if (text.length < 20) return toast('Write at least a couple of sentences first.');
+  S.teach[id] = Object.assign(S.teach[id] || {}, { text }); save();
+  const topic = isStep ? 'Monte Carlo portfolio simulation results, explained to a client' : LMAP[id].title + ' (Python)';
+  out.innerHTML = '<span class="muted">Grading...</span>';
+  try {
+    const fb = await callClaude(DATA.grade_system, [{ role: 'user', content: `Topic: ${topic}\n\nExplanation:\n${text}` }], false);
+    S.teach[id].fb = fb; save(); out.innerHTML = md(fb); activity();
+    if (isStep) { S.mc[id.replace('mc', '')] = true; save(); }
+  } catch (e) { out.innerHTML = '<span class="fail">' + esc(e.message) + '</span>'; }
+}
+
+/* ---------- projects ---------- */
+let sortBy = 'fit';
+function vProjects() {
+  const ps = [...PROJECTS].sort((a, b) => sortBy === 'easy' ? a.difficulty - b.difficulty : sortBy === 'fast' ? parseInt(a.hours) - parseInt(b.hours) : (b[sortBy] - a[sortBy]) || (b.college - a.college));
+  return `<h2>Finance projects</h2><div class="muted small">Every project is built by you. Ratings are honest estimates for a beginner.</div>
+  <div class="warn">${md(DATA.college_note)}</div>
+  <div class="row small">Sort: ${[['fit', 'Finance fit'], ['college', 'College value'], ['easy', 'Easiest'], ['fast', 'Fastest']].map(([k, l]) => `<button class="btn ${sortBy === k ? 'pri' : ''}" onclick="sortBy='${k}';render()">${l}</button>`).join('')}</div>
+  <div class="grid">${ps.map(p => {
+    const ready = p.lessons.filter(lessonDone).length;
+    return `<div class="card lesson" onclick="go('project','${p.id}')"><b>${esc(p.name)}</b> ${p.guided ? '<span class="pill ok">Guided build</span>' : ''}<div class="small muted">${esc(p.tag)}</div>
+     <div style="margin-top:8px">${metrics(p)}</div><div class="small muted">Prereq lessons: ${ready}/${p.lessons.length} done</div></div>`;
+  }).join('')}</div>`;
+}
+function metrics(p) {
+  return `<div class="metric"><span>Wealth-mgmt fit</span>${dots(p.fit)}</div>
+   <div class="metric"><span>College value (as-is)</span>${dots(p.college)}</div>
+   <div class="metric"><span>College value (polished + write-up)</span>${dots(p.collegePlus)}</div>
+   <div class="metric"><span>Difficulty</span>${dots(p.difficulty)}</div>
+   <div class="metric"><span>Total build time</span><span>${p.hours} hrs</span></div>
+   <div class="metric"><span>Per session</span><span>${p.perDay} min</span></div>`;
+}
+function vProject(id) {
+  const p = PMAP[id];
+  const pre = p.lessons.map(l => `<a class="pill ${lessonDone(l) ? 'ok' : ''}" style="cursor:pointer" onclick="go('lesson','${l}')">${lessonDone(l) ? '✓ ' : ''}${esc(LMAP[l].title)}</a>`).join(' ');
+  let body;
+  if (p.guided) {
+    body = `<div class="card"><h3>Guided build (${MC.filter((_, i) => S.mc[i]).length}/${MC.length})</h3>
+     <div class="prog"><b style="width:${100 * MC.filter((_, i) => S.mc[i]).length / MC.length}%"></b></div>
+     ${MC.map((s, i) => `<div class="row" style="justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)"><span>${S.mc[i] ? '<span class="pass">✓</span>' : '<span class="muted">' + (i + 1) + '</span>'} ${esc(s.title)}</span><button class="btn ${S.mc[i] ? '' : 'pri'}" onclick="go('step',${i})">${S.mc[i] ? 'Review' : 'Open'}</button></div>`).join('')}
+     <p class="small muted">Each step adds to the code from the step before. Final program is about 30 lines.</p></div>`;
+  } else {
+    body = `<div class="card"><h3>Milestones (build these yourself)</h3><ol>${p.milestones.map(m => '<li>' + esc(m) + '</li>').join('')}</ol>
+     <p class="small muted">Work in the Sandbox. Use the tutor to plan each milestone (ask it "how should I break this down?"). It will not write the code for you.</p>
+     <button class="btn pri" onclick="go('sandbox','${p.id}')">Open in Sandbox</button></div>`;
+  }
+  return `<div class="crumb"><a onclick="go('projects')">Projects</a> / ${esc(p.name)}</div><h2>${esc(p.name)}</h2><div class="muted">${esc(p.tag)}</div>
+   <div class="card">${metrics(p)}</div>
+   <div class="card"><h3>Why it matters</h3><p>${esc(p.why)}</p><h3>What makes it stand out</h3><p>${esc(p.standout)}</p>
+   <h3>Lessons you need first</h3><div>${pre}</div></div>${body}`;
+}
+function stepStarter(i) {
+  let prev = '';
+  for (let k = i - 1; k >= 0; k--) { if (MC[k].teach) continue; prev = S.code['MC:' + k] ?? ''; break; }
+  return (prev ? prev.replace(/\s*$/, '\n') : '') + MC[i].append.replace(/^\n+/, prev ? '\n\n' : '');
+}
+function vStep(i) {
+  const s = MC[i], key = 'MC:' + i, hn = S.hints[key] || 0;
+  const nav = `<div class="row" style="justify-content:space-between">${i > 0 ? `<button class="btn" onclick="go('step',${i - 1})">← Step ${i}</button>` : '<span></span>'}${i < MC.length - 1 ? `<button class="btn ${S.mc[i] ? 'pri' : ''}" onclick="go('step',${i + 1})">Step ${i + 2} →</button>` : `<button class="btn" onclick="go('project','mc')">Back to project</button>`}</div>`;
+  const head = `<div class="crumb"><a onclick="go('projects')">Projects</a> / <a onclick="go('project','mc')">Monte Carlo</a> / Step ${i + 1}</div><h2>${esc(s.title)} ${S.mc[i] ? '<span class="pill ok">✓ done</span>' : ''}</h2>`;
+  if (s.teach) {
+    return head + `<div class="card">${md(s.goal)}<textarea id="teach-mc${i}" rows="6" style="margin-top:8px">${esc(S.teach['mc' + i]?.text || '')}</textarea>
+     <div class="row"><button class="btn blue" onclick="gradeTeach('mc${i}',true)">Grade with tutor</button></div><div id="grade-mc${i}" class="small">${S.teach['mc' + i]?.fb ? md(S.teach['mc' + i].fb) : ''}</div></div>
+     <div class="card"><h3>Level it up (college value 2 → 4)</h3><ul class="small"><li>Add yearly withdrawals and inflation (becomes the Retirement planner project)</li><li>Let the user type their own start, years, and allocation</li><li>Draw a text histogram of outcomes using loops</li><li>Write a one-page explanation for a real family and put it on GitHub with your code</li></ul></div>` + nav;
+  }
+  if (S.code[key] == null) S.code[key] = stepStarter(i);
+  return head + `<div class="card">${md(s.goal)}</div>
+   <div class="card">${ed(key, stepStarter(i), 18)}
+    <div class="row"><button class="btn" onclick="runStep(${i},false)">Run</button><button class="btn pri" onclick="runStep(${i},true)">Check</button>
+     <button class="btn" onclick="hint('${key}')" ${hn >= s.hints.length ? 'disabled' : ''}>Hint (${hn}/${s.hints.length})</button>
+     <button class="btn blue" onclick="askAbout()">Ask tutor</button><button class="btn" onclick="resetCode('${key}', stepStarter(${i}))">Reset step</button><span class="small muted pystatus"></span></div>
+    <div>${s.hints.slice(0, hn).map((h, k) => `<div class="warn">Hint ${k + 1}: ${hintMd(h)}</div>`).join('')}</div>
+    <div class="out" id="out-${key}"></div></div>` + nav;
+}
+async function runStep(i, check) {
+  const key = 'MC:' + i, el = document.getElementById('out-' + key);
+  el.style.display = 'block'; el.innerHTML = '<span class="muted">Running...</span>';
+  const r = await runPy(edVal(key), [], check ? MC[i].tests : []);
+  LAST[key] = r; showOut(el, r);
+  if (check && r.results.length && r.results.every(t => t.p)) {
+    const first = !S.mc[i]; S.mc[i] = true;
+    if (first && i === 0) addCards('mc', DATA.mc_cards);
+    activity(); save(); toast('Step passed!'); laterRender();
+  }
+}
+
+/* ---------- sandbox ---------- */
+function vSandbox(pid) {
+  const key = 'SB:' + (pid || 'free'), p = pid && PMAP[pid];
+  const starter = p ? `# ${p.name}\n# Milestones:\n${p.milestones.map((m, i) => `#  ${i + 1}. ${m}`).join('\n')}\n\n` : '# Free sandbox. Write anything and press Run.\nprint("hello")\n';
+  return `<h2>Sandbox${p ? ': ' + esc(p.name) : ''}</h2><div class="muted small">Free coding space. numpy and pandas load automatically if you import them (slower first time).</div>
+  <div class="row small" style="margin:8px 0">Workspace: <select style="width:auto" onchange="go('sandbox', this.value || undefined)"><option value="">Free sandbox</option>${PROJECTS.filter(x => !x.guided).map(x => `<option value="${x.id}" ${x.id === pid ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></div>
+  <div class="card">${ed(key, starter, 20)}
+   <div class="small muted">Input lines (one per input() call):</div><textarea id="sbin" rows="2">${esc(S.code['IN:' + key] || '')}</textarea>
+   <div class="row"><button class="btn pri" onclick="runSB('${key}')">Run</button><button class="btn blue" onclick="askAbout()">Ask tutor</button><span class="small muted pystatus"></span></div>
+   <div class="out" id="out-${key}"></div></div>`;
+}
+async function runSB(key) {
+  const inp = $('#sbin').value; S.code['IN:' + key] = inp; save();
+  const el = document.getElementById('out-' + key); el.style.display = 'block'; el.innerHTML = '<span class="muted">Running...</span>';
+  const r = await runPy(edVal(key), inp.split('\n').filter(x => x.length)); LAST[key] = r; showOut(el, r); activity();
+}
+
+/* ---------- spaced repetition ---------- */
+const IVL = [0, 1, 3, 7, 16, 35];
+function addCards(src, cards) { cards.forEach((c, k) => { const id = src + ':' + k; if (!S.cards.find(x => x.id === id)) S.cards.push({ id, q: c.q, a: c.a, box: 0, due: today() }); }); save(); }
+const dueCards = () => S.cards.filter(c => c.due <= today());
+let rv = { shown: false };
+function vReview() {
+  const due = dueCards();
+  if (!S.cards.length) return `<h2>Review</h2><div class="card">No cards yet. Pass a lesson exercise to add cards.</div>`;
+  if (!due.length) {
+    const nextDue = S.cards.map(c => c.due).sort()[0];
+    return `<h2>Review</h2><div class="card">All caught up. ${S.cards.length} cards total. Next due: ${nextDue}.<br><span class="small muted">Spacing the reviews out is the point. Come back then.</span></div>`;
+  }
+  const c = due[0];
+  return `<h2>Review</h2><div class="muted small">${due.length} due · Box ${c.box + 1}/6</div>
+  <div class="card"><div class="flash">${esc(c.q)}</div>
+   ${rv.shown ? `<div class="small muted">Your answer: ${esc(rv.typed || '(blank)')}</div><div class="flash pass">${esc(c.a)}</div>
+     <div class="row" style="justify-content:center"><button class="btn" onclick="grade('${c.id}',0)">Forgot</button><button class="btn" onclick="grade('${c.id}',1)">Hard</button><button class="btn pri" onclick="grade('${c.id}',2)">Got it</button></div>`
+    : `<textarea id="rvin" rows="2" placeholder="Answer from memory first (typing it beats just thinking it)"></textarea><div class="row" style="justify-content:center"><button class="btn pri" onclick="rv={shown:true,typed:$('#rvin').value};render()">Reveal</button></div>`}
+  </div>`;
+}
+function grade(id, g) {
+  const c = S.cards.find(x => x.id === id);
+  if (g === 0) c.box = 0; else if (g === 2) c.box = Math.min(c.box + 1, IVL.length - 1);
+  if (g === 0) { S.cards.splice(S.cards.indexOf(c), 1); S.cards.push(c); c.due = today(); } // back of today's queue
+  else {
+    const days = g === 1 ? Math.max(1, Math.round(IVL[c.box] / 2)) : Math.max(1, IVL[c.box]);
+    c.due = new Date(Date.now() + days * 864e5).toLocaleDateString('en-CA');
+  }
+  rv = { shown: false }; activity(); save(); render();
+}
+
+/* ---------- AI tutor ---------- */
+let chat = [];
+async function callClaude(system, messages, web) {
+  const key = getKey();
+  if (!key) throw new Error('No API key yet. Add one in Settings.');
+  const body = { model: S.settings.model || 'claude-haiku-5-5', max_tokens: 900, system, messages };
+  if (web) body.tools = [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }];
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+    body: JSON.stringify(body)
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error('API error ' + r.status + ': ' + (j.error?.message || 'unknown'));
+  return (j.content || []).filter(b => b.type === 'text').map(b => b.text).join('').trim() || '(empty reply)';
+}
+function context() {
+  if (!$('#tctx').checked) return '';
+  let s = '';
+  if (view.name === 'lesson') { const l = LMAP[view.arg]; s += `Lesson: ${l.title}\nExercise: ${l.task}\n`; }
+  if (view.name === 'step') { s += `Monte Carlo project, step ${view.arg + 1}: ${MC[view.arg].title}\nGoal: ${MC[view.arg].goal}\n`; }
+  if (view.name === 'project') { s += `Viewing project: ${PMAP[view.arg].name}\n`; }
+  const key = CUR || (view.name === 'lesson' ? 'L:' + view.arg : view.name === 'step' ? 'MC:' + view.arg : view.name === 'sandbox' ? 'SB:' + (view.arg || 'free') : null);
+  if (key && document.querySelector(`textarea.ed[data-key="${key}"]`)) {
+    s += `\nMy current code:\n\`\`\`python\n${edVal(key)}\n\`\`\`\n`;
+    const r = LAST[key];
+    if (r) s += `\nLast run output:\n${(r.out || '').slice(-1500)}${r.err ? '\nError:\n' + r.err : ''}${r.results?.length ? '\nChecks:\n' + r.results.map(t => (t.p ? 'PASS ' : 'FAIL ') + t.d).join('\n') : ''}\n`;
+  }
+  return s ? '[Context]\n' + s + '\n[My question]\n' : '';
+}
+function toggleTutor() { $('#drawer').classList.toggle('open'); $('#tmodel').textContent = S.settings.model; drawChat(); if ($('#drawer').classList.contains('open')) $('#tin').focus(); }
+function askAbout() { if (!$('#drawer').classList.contains('open')) toggleTutor(); $('#tin').value ||= 'Why is my code not working? Do not give me the answer, point me in the right direction.'; $('#tin').focus(); }
+function drawChat() {
+  $('#msgs').innerHTML = (chat.length ? '' : `<div class="small muted">Ask about errors, concepts, or finance research. The tutor is set to guide you, not write your code.${getKey() ? '' : '<br><br><b class="fail">No API key yet.</b> Add one in <a class="crumb" onclick="toggleTutor();go(\'settings\')">Settings</a>.'}</div>`) +
+    chat.map(m => `<div class="msg ${m.role === 'user' ? 'u' : 'a'}">${md(m.show ?? m.content)}</div>`).join('');
+  $('#msgs').scrollTop = 1e9;
+}
+async function sendTutor() {
+  const q = $('#tin').value.trim(); if (!q) return;
+  const full = context() + q;
+  chat.push({ role: 'user', content: full, show: q }); $('#tin').value = ''; drawChat();
+  chat.push({ role: 'assistant', content: '...' }); drawChat();
+  try {
+    const msgs = chat.slice(0, -1).slice(-12).map(m => ({ role: m.role, content: m.content }));
+    while (msgs.length && msgs[0].role !== 'user') msgs.shift();
+    chat[chat.length - 1].content = await callClaude(DATA.tutor_system, msgs, $('#tweb').checked);
+    drawChat();
+  } catch (e) {
+    chat.splice(-2, 2); drawChat();
+    $('#msgs').insertAdjacentHTML('beforeend', `<div class="msg a fail">${md('**Error:** ' + e.message)}</div>`);
+    $('#tin').value = q;
+  }
+}
+function clearChat() { chat = []; drawChat(); }
+$('#tin').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) sendTutor(); });
+
+/* ---------- settings ---------- */
+function vSettings() {
+  const k = getKey();
+  return `<h2>Settings</h2>
+  <div class="card"><h3>AI tutor (Anthropic API key)</h3>
+   <div class="warn"><b>Risks, read this:</b><br>• Every tutor message costs real money on your Anthropic account. Haiku is cheapest (fractions of a cent per question). Web search adds about $0.01 per search.<br>• Set a <b>monthly spend limit</b> at console.anthropic.com so a bug can never run up a bill.<br>• Your key is stored only in this browser on this device. It is NOT in the code, so it is not on GitHub. Never paste it into the code or commit it.<br>• Anyone using this browser profile could read it. Don't use this on a shared computer. If it ever leaks, delete it in the console immediately.</div>
+   <input id="apikey" type="password" placeholder="sk-ant-..." value="${k ? '••••••••' + esc(k.slice(-4)) : ''}">
+   <div class="row"><button class="btn pri" onclick="saveKey()">Save key</button><button class="btn" onclick="testKey()">Test</button>${k ? '<button class="btn" onclick="delKey()">Remove key</button>' : ''}<span id="keymsg" class="small"></span></div>
+   <div style="margin-top:10px" class="small">Model</div>
+   <select id="model" onchange="S.settings.model=this.value;save()">${[['claude-haiku-5-5', 'Haiku 5.5 (cheapest, fine for tutoring)'], ['claude-sonnet-5-5', 'Sonnet 5.5 (smarter, ~3x cost)']].map(([v, l]) => `<option value="${v}" ${S.settings.model === v ? 'selected' : ''}>${l}</option>`).join('')}${!['claude-haiku-5-5', 'claude-sonnet-5-5'].includes(S.settings.model) ? `<option selected>${esc(S.settings.model)}</option>` : ''}</select>
+   <div class="small muted">Custom model ID (only if the ones above stop working):</div><input placeholder="model id" onchange="if(this.value.trim()){S.settings.model=this.value.trim();save();render()}">
+   <p class="small muted">Web search must be allowed for your org in the Anthropic console, or Research mode returns an error.</p></div>
+  <div class="card"><h3>Progress backup</h3>
+   <div class="warn"><b>Data loss risk:</b> progress lives in this browser only. Clearing browser data deletes it. Safari on iPhone can wipe site data after about 7 days of not opening the site unless you add it to your Home Screen. Progress does not sync between your MacBook and iPhone. Export a backup weekly.</div>
+   <div class="row"><button class="btn pri" onclick="exportData()">Export backup</button><label class="btn">Import backup<input type="file" accept=".json" style="display:none" onchange="importData(this.files[0])"></label></div></div>
+  <div class="card"><h3>Danger zone</h3><button class="btn" style="border-color:var(--bad);color:var(--bad)" onclick="wipe()">Erase all progress</button></div>`;
+}
+function saveKey() {
+  const v = $('#apikey').value.trim();
+  if (v.startsWith('••')) return toast('Key already saved.');
+  if (!v.startsWith('sk-ant-')) return toast('That does not look like an Anthropic key (should start with sk-ant-).');
+  try { localStorage.setItem('forge_key', v); } catch (e) { return toast('Could not save key: ' + e.message); }
+  toast('Key saved on this device.'); render();
+}
+function delKey() { if (confirm('Remove the API key from this device?')) { localStorage.removeItem('forge_key'); render(); } }
+async function testKey() {
+  $('#keymsg').textContent = 'Testing...';
+  try { await callClaude('Reply with only: OK', [{ role: 'user', content: 'test' }], false); $('#keymsg').innerHTML = '<span class="pass">Works.</span>'; }
+  catch (e) { $('#keymsg').innerHTML = '<span class="fail">' + esc(e.message) + '</span>'; }
+}
+function exportData() {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(S, null, 1)], { type: 'application/json' }));
+  a.download = 'forge-backup-' + today() + '.json'; a.click();
+}
+function importData(f) {
+  if (!f) return;
+  if (!confirm('Importing REPLACES your current progress on this device. Export first if unsure. Continue?')) return;
+  f.text().then(t => { const d = JSON.parse(t); if (!d.done || !d.code) throw new Error('Not a Forge backup'); S = d; localStorage.setItem(KEY, JSON.stringify(S)); location.reload(); }).catch(e => toast('Import failed: ' + e.message));
+}
+function wipe() {
+  if (!confirm('Erase ALL progress, code, and flashcards? This cannot be undone.')) return;
+  if (prompt('Second confirmation. Type ERASE to delete everything:') !== 'ERASE') return toast('Cancelled. Nothing deleted.');
+  localStorage.removeItem(KEY); location.reload();
+}
+
+render();
+startWorker();
+</script>
+</body>
+</html>
