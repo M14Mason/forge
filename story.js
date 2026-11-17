@@ -3,6 +3,8 @@
    mixed formats, misses shown + re-asked reworded ~4 questions later, mastery = 2 right in a row. */
 const FX = window.FORGE_EXTRA || { stories: {}, minis: [], projects: [], newLessons: [] };
 const STORIES = FX.stories;
+Object.assign(STORIES, (window.FORGE_EXTRA2 || {}).stories || {});
+const titleOf = id => (typeof LMAP !== 'undefined' && LMAP[id]?.title) || STORIES[id]?.title || id;
 const MINIS = FX.minis, MMAP = Object.fromEntries(MINIS.map(m => [m.id, m]));
 const FMT = { scn: 'Scenario', def: 'Definition', term: 'Name the term', tf: 'True or false', calc: 'Calculate', not: 'Which is NOT' };
 
@@ -182,7 +184,7 @@ function setBars(html) { OV.querySelector('.st-bars').innerHTML = html; }
 /* ---------- story player ---------- */
 function openStory(lid, start = 0) {
   const st = STORIES[lid]; if (!st) return;
-  openOv(LMAP[lid].title);
+  openOv(titleOf(lid));
   SP = { mode: 'story', lid, i: 0, paused: false };
   stBody().innerHTML = `<div class="st-stage"></div><div class="st-cap"></div><div class="st-tap L"></div><div class="st-tap R"></div><div class="st-hint">Tap right to skip · left to go back · hold to pause</div>`;
   stBody().querySelectorAll('.st-tap').forEach(z => bindTap(z, z.classList.contains('L') ? prevScene : nextScene));
@@ -211,11 +213,11 @@ function nextScene() { if (!SP || SP.mode !== 'story') return; const n = STORIES
 function prevScene() { if (!SP || SP.mode !== 'story') return; showScene(Math.max(0, SP.i - 1)); }
 function storyEnd() {
   const lid = SP.lid, st = STORIES[lid]; clearTimeout(SP.timer); SP.mode = 'end';
-  S.story[lid] = { seen: today() }; activity(); save();
+  S.story[lid] = { seen: today() }; const added = syncVisCards(); activity(); save();
   setBars(st.scenes.map(() => '<i class="done"></i>').join(''));
   const nq = st.concepts.length;
   stBody().innerHTML = `<div class="st-end"><div class="st-endt">Story done</div>
-    <p>${st.lab ? 'Play with the idea for a minute, then a' : 'Now a'} quick quiz on only what you just watched: ${nq} ideas, mixed question types. Get each one right twice in a row to master it.</p>
+    <p>${st.lab ? 'Play with the idea for a minute, then a' : 'Now a'} quick quiz on only what you just watched: ${nq} ideas, mixed question types. Get each one right twice in a row to master it.</p>${added ? `<p class="small">${added} animated flashcards from this story were added to Review. They come back on a spacing schedule.</p>` : ''}
     ${st.lab ? `<button class="btn pri" onclick="openLab('${lid}')">Try the lab</button><button class="btn" onclick="startQuiz('${lid}')">Skip to quiz</button>` : `<button class="btn pri" onclick="startQuiz('${lid}')">Start quiz</button>`}
     <button class="btn" onclick="openStory('${lid}')">Watch again</button></div>`;
 }
@@ -282,7 +284,7 @@ let LABV = null;
 function openLab(lid) {
   if (SP) clearTimeout(SP.timer);
   const L = LABS[STORIES[lid].lab]; SP = { mode: 'lab', lid, lab: STORIES[lid].lab };
-  openOv(LMAP[lid].title); setBars('');
+  openOv(titleOf(lid)); setBars('');
   LABV = {}; L.sliders.forEach(s => LABV[s[0]] = s[5]);
   stBody().innerHTML = `<div class="lab"><h3>${esc(L.title)}</h3>${L.sliders.map(([k, lab, mn, mx, stp, val, f]) => `<label class="lab-s"><span>${esc(lab)} <b id="lv-${k}">${f(val)}</b></span><input type="range" min="${mn}" max="${mx}" step="${stp}" value="${val}" oninput="LABV['${k}']=+this.value;document.getElementById('lv-${k}').textContent=LABS['${SP.lab}'].sliders.find(s=>s[0]==='${k}')[6](+this.value);labDraw()"></label>`).join('')}
     <svg viewBox="0 0 300 150" class="lab-svg" id="lab-svg"></svg><div id="lab-out"></div><p class="small lab-tip">${esc(L.tip)}</p>
@@ -311,17 +313,17 @@ function startQuiz(lid) {
   if (SP) clearTimeout(SP.timer);
   SP = { mode: 'quiz' };
   const st = STORIES[lid];
-  QZ = { mode: 'lesson', lid, title: 'Quiz: ' + LMAP[lid].title, queue: shuffle(st.concepts.map(c => mkItem(lid, c.id, 'first'))), pos: 0, first: { ok: 0, n: 0 }, att: {}, seen: new Set(st.concepts.map(c => ckey(lid, c.id))) };
+  QZ = { mode: 'lesson', lid, title: 'Quiz: ' + titleOf(lid), queue: shuffle(st.concepts.map(c => mkItem(lid, c.id, 'first'))), pos: 0, first: { ok: 0, n: 0 }, att: {}, seen: new Set(st.concepts.map(c => ckey(lid, c.id))) };
   openOv(QZ.title); showQ();
 }
 function weakList() {
   const out = [];
-  Object.keys(STORIES).forEach(lid => { if (!S.story[lid] || !LMAP[lid]) return; STORIES[lid].concepts.forEach(c => { const m = S.mast[ckey(lid, c.id)]; if (!m || !m.m) out.push([lid, c.id]); }); });
+  Object.keys(STORIES).forEach(lid => { if (!S.story[lid]) return; STORIES[lid].concepts.forEach(c => { const m = S.mast[ckey(lid, c.id)]; if (!m || !m.m) out.push([lid, c.id]); }); });
   return out;
 }
 function startPractice(n = 10) {
   const pool = [];
-  Object.keys(STORIES).forEach(lid => { if (!S.story[lid] || !LMAP[lid]) return; STORIES[lid].concepts.forEach(c => { const m = S.mast[ckey(lid, c.id)]; const w = !m ? 4 : m.m ? 1 : m.st === 1 ? 3 : m.bad ? 6 : 4; pool.push({ lid, cid: c.id, w }); }); });
+  Object.keys(STORIES).forEach(lid => { if (!S.story[lid]) return; STORIES[lid].concepts.forEach(c => { const m = S.mast[ckey(lid, c.id)]; const w = !m ? 4 : m.m ? 1 : m.st === 1 ? 3 : m.bad ? 6 : 4; pool.push({ lid, cid: c.id, w }); }); });
   if (!pool.length) return toast('Watch a story lesson first. Practice draws from what you have watched.');
   const pick = [];
   while (pick.length < Math.min(n, pool.length)) {
@@ -340,7 +342,7 @@ function showQ() {
   const it = QZ.queue[QZ.pos], c = concept(it.lid, it.cid), q = c.q[it.v], m = mast(ckey(it.lid, it.cid));
   const tag = it.kind === 'retry' ? '<span class="pill warn-p">Again, reworded</span>' : it.kind === 'confirm' ? '<span class="pill">Second time: lock it in</span>' : '';
   stBody().innerHTML = `<div class="qz"><div class="qz-top"><span class="pill">${FMT[q[0]]}</span>${tag}<span class="qz-n">${QZ.pos + 1} / ${QZ.queue.length}</span></div>
-    ${QZ.mode === 'practice' ? `<div class="small muted">${esc(LMAP[it.lid].title)}</div>` : ''}
+    ${QZ.mode === 'practice' ? `<div class="small muted">${esc(titleOf(it.lid))}</div>` : ''}
     <div class="qz-q">${md(q[1])}</div>
     <div class="qz-ch">${it.order.map(k => `<button class="btn choice" onclick="answer(${k})">${capMd(q[2][k])}</button>`).join('')}</div>
     <div class="qz-m">${mdots(m)} <span class="small muted">${esc(c.n)}</span></div><div id="qz-fb"></div></div>`;
@@ -392,29 +394,30 @@ function quizEnd() {
 
 /* ---------- lesson page / home / review helpers (called from index.html views) ---------- */
 function lessonMastery(lid) { const st = STORIES[lid]; if (!st) return [0, 0]; return [st.concepts.filter(c => S.mast[ckey(lid, c.id)]?.m).length, st.concepts.length]; }
-function storyCard(lid) {
+function storyCard(lid, num) {
   const st = STORIES[lid]; if (!st) return '';
   const [mm, mn] = lessonMastery(lid), seen = S.story[lid], qz = S.qz[lid];
-  return `<div class="card story-card"><h3>1. Watch, then quiz ${seen ? '<span class="pill ok">✓ watched</span>' : ''}</h3>
+  return `<div class="card story-card"><h3>${num ? num + '. ' : ''}Watch, then quiz ${seen ? '<span class="pill ok">✓ watched</span>' : ''}</h3>
     <div class="small muted">${st.scenes.length} short animated scenes (about 1 minute)${st.lab ? ', a slider lab' : ''}, then a quiz on only what you watched.</div>
     <div class="row" style="margin-top:8px"><button class="btn pri" onclick="openStory('${lid}')">▶ ${seen ? 'Watch again' : 'Watch the story'}</button>
      <button class="btn" onclick="startQuiz('${lid}')" ${seen ? '' : 'disabled title="Watch first"'}>Quiz</button>${st.lab ? `<button class="btn" onclick="openLab('${lid}')">Lab</button>` : ''}</div>
     <div class="small" style="margin-top:8px">Mastered ${mm}/${mn} ideas${qz ? ` · last quiz ${qz.ok}/${qz.n} first try` : ''}</div><div class="prog"><b style="width:${100 * mm / mn}%"></b></div></div>`;
 }
 function practiceCard() {
-  const seen = Object.keys(S.story).filter(l => STORIES[l] && LMAP[l]).length;
+  const seen = Object.keys(S.story).filter(l => STORIES[l]).length;
   if (!seen) return `<div class="card"><h3>Practice quiz</h3><div class="small muted">Watch a story lesson first. Practice mixes questions from everything you have watched, weak ideas first.</div></div>`;
   const weak = weakList().length;
-  return `<div class="card"><h3>Practice quiz</h3><div class="small muted">10 mixed questions from ${seen} watched lesson${seen > 1 ? 's' : ''}, weighted toward ideas you have not mastered yet. ${weak} not mastered.</div><button class="btn pri" onclick="startPractice()">Start practice</button></div>`;
+  return `<div class="card"><h3>Practice quiz</h3><div class="small muted">10 mixed questions from ${seen} watched stor${seen > 1 ? 'ies' : 'y'}, weighted toward ideas you have not mastered yet. ${weak} not mastered.</div><button class="btn pri" onclick="startPractice()">Start practice</button></div>`;
 }
 const preq = list => list.map(l => LMAP[l] ? `<a class="pill ${lessonDone(l) ? 'ok' : ''}" style="cursor:pointer" onclick="go('lesson','${l}')">${lessonDone(l) ? '✓ ' : ''}${esc(LMAP[l].title)}</a>` : '').join(' ');
 function miniCards() {
-  return MINIS.map(m => { const ready = m.lessons.filter(lessonDone).length; return `<div class="card lesson" onclick="go('mini','${m.id}')"><b>${esc(m.name)}</b> ${S.minis[m.id] ? '<span class="pill ok">✓ passed</span>' : ''}<div class="small muted">${esc(m.tag)}</div>
+  return MINIS.map(m => { const ready = m.lessons.filter(lessonDone).length; return `<div class="card lesson" onclick="go('mini','${m.id}')"><b>${esc(m.name)}</b> ${S.minis[m.id] ? '<span class="pill ok">✓ passed</span>' : ''}${S.story['m_' + m.id] ? '<span class="pill ok">✓ watched</span>' : STORIES['m_' + m.id] ? '<span class="pill">▶ story</span>' : ''}<div class="small muted">${esc(m.tag)}</div>
     <div style="margin-top:8px"><div class="metric"><span>Difficulty</span>${dots(m.difficulty)}</div><div class="metric"><span>Time</span><span>~${m.min} min</span></div><div class="metric"><span>PY4E chapter</span><span>${esc(m.ch)}</span></div></div><div class="small muted">Prereq lessons: ${ready}/${m.lessons.length} done</div></div>`; }).join('');
 }
 function vMini(id) {
   const m = MMAP[id], key = 'MP:' + id, hn = S.hints[key] || 0;
   return `<div class="crumb"><a onclick="go('projects')">Projects</a> / Mini project</div><h2>${esc(m.name)} ${S.minis[id] ? '<span class="pill ok">✓ passed</span>' : ''}</h2><div class="muted small">PY4E Ch ${esc(m.ch)} · ~${m.min} min · auto-checked</div>
+   ${storyCard('m_' + id)}
    <div class="card"><h3>Why it matters</h3><p class="small">${md(m.why)}</p><h3>Lessons you need first</h3><div>${preq(m.lessons)}</div></div>
    <div class="card"><h3>Your task</h3>${md(m.task)}</div>
    <div class="card">${ed(key, m.starter, 16)}
@@ -431,3 +434,30 @@ async function runMini(id, check) {
   LAST[key] = r; showOut(el, r);
   if (check && r.results.length && r.results.every(t => t.p)) { const first = !S.minis[id]; S.minis[id] = true; activity(); save(); toast(first ? 'Mini project passed!' : 'Passed again.'); laterRender(); }
 }
+
+/* ---------- animated flashcards ---------- */
+// Every idea a watched story teaches becomes a visual flashcard: the back replays its scene.
+function syncVisCards() {
+  let n = 0; const due = () => new Date(Date.now() + (1 + Math.floor(n / 8)) * 864e5).toLocaleDateString('en-CA'); // spread new cards, 8 a day
+  Object.keys(S.story).forEach(lid => { const st = STORIES[lid]; if (!st) return;
+    st.concepts.forEach(c => { const id = 'V:' + ckey(lid, c.id); if (!S.cards.find(x => x.id === id)) { S.cards.push({ id, vis: [lid, c.id], q: c.n, a: c.fix, box: 0, due: due() }); n++; } }); });
+  if (n) save();
+  return n;
+}
+const words = t => new Set(String(t).toLowerCase().match(/[a-z_]{3,}|\*\*|\/\/|%/g) || []);
+function cardScene(c) {
+  if (c.vis) { const st = STORIES[c.vis[0]], k = st && st.concepts.find(x => x.id === c.vis[1]); return k ? [c.vis[0], k.s] : null; }
+  const src = c.id.split(':')[0], pool = STORIES[src] ? [src] : src === 'mc' ? Object.keys(STORIES).filter(k => /^mc\d$/.test(k)) : [];
+  const want = words(c.q + ' ' + c.a); let best = null, bs = 1;
+  pool.forEach(lid => STORIES[lid].scenes.forEach((sc, i) => { const have = words(sc.cap + ' ' + JSON.stringify(sc.p)); let sc2 = 0; want.forEach(w => have.has(w) && sc2++); if (sc2 > bs) { bs = sc2; best = [lid, i]; } }));
+  return best;
+}
+function cardFront(c) {
+  if (c.vis) return `<div class="small muted" style="text-align:center">Picture the animation, then explain it out loud</div><div class="flash">${capMd(c.q)}</div>`;
+  return `<div class="flash">${esc(c.q)}</div>`;
+}
+function cardBack(c) {
+  const r = cardScene(c);
+  return `<div class="fc-back">${r ? `<div class="qz-mini" id="rv-scene"></div><div class="qz-cap">${capMd(STORIES[r[0]].scenes[r[1]].cap)}</div><div style="text-align:center"><button class="btn" onclick="playCard()">↻ Replay</button></div>` : ''}<div class="flash pass">${c.vis ? capMd(c.a) : esc(c.a)}</div></div>`;
+}
+function playCard() { const c = dueCards()[0], r = c && cardScene(c), el = document.getElementById('rv-scene'); if (r && el) playInto(el, sceneHTML(STORIES[r[0]].scenes[r[1]])); }

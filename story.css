@@ -172,3 +172,9 @@ body.st-lock{overflow:hidden}
   .st-scene .a-draw{animation:none!important;stroke-dashoffset:0!important}
   .st-scene .sq-blink{display:none}.st-cap{opacity:1;transform:none;animation:none!important}
 }
+
+/* animated flashcards */
+.fc-back{animation:fc-flip .45s ease-out both;transform-origin:top center}
+@keyframes fc-flip{from{opacity:0;transform:perspective(800px) rotateX(-70deg)}to{opacity:1;transform:none}}
+.card details summary{list-style:none;margin:4px 0}.card details[open] summary{margin-bottom:8px}
+@media (prefers-reduced-motion:reduce){.fc-back{animation:none}}
